@@ -1,0 +1,26 @@
+{
+  "id": "/diary/",
+  "name": "Diary",
+  "short_name": "Diary",
+  "description": "Personal diary and journal",
+  "start_url": "/diary/",
+  "scope": "/diary/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F7F8F4",
+  "theme_color": "#DDEFE8",
+  "icons": [
+    {
+      "src": "/diary/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/diary/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
