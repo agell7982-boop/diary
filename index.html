@@ -1,5 +1,4 @@
-<!doctype html><html lang="ko"><head><link rel="manifest" href="/diary/manifest.json">
-<meta name="theme-color" content="#DDEFE8"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>나만의 일기장</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"><style>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>나만의 일기장</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"><style>
 :root{--bg:#FAF8F4;--tx:#2B2A27;--mu:#6E695F;--ln:#ECE8E0;--bd:#E3DED4;--sf:#fff;--ok:#4F9A83;--no:#C2773F;--ac:#46688F;--rd:#C0392B;--rs:#FF9C8F;--bl:#2F6DB5;--bs:#9CC3F2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1F1E1B;--tx:#F0EDE6;--mu:#A8A398;--ln:#34322D;--bd:#3F3C36;--sf:#2A2824;--ok:#6FBFA5;--no:#E09A66;--ac:#8FB0D8;--rd:#FF8A80;--rs:#B3261E;--bl:#8FB8F0;--bs:#2F6DB5}}
 :root[data-theme="dark"]{--bg:#1F1E1B;--tx:#F0EDE6;--mu:#A8A398;--ln:#34322D;--bd:#3F3C36;--sf:#2A2824;--ok:#6FBFA5;--no:#E09A66;--ac:#8FB0D8;--rd:#FF8A80;--rs:#B3261E;--bl:#8FB8F0;--bs:#2F6DB5}
@@ -78,6 +77,7 @@ textarea{font:inherit}
 .sh .mp{border:0;margin:0;padding:0}
 .mc{position:relative}.gf{position:absolute;top:2px;right:8px;font-size:10px}
 .gs{display:flex;gap:4px;max-width:190px;font-size:13px;color:var(--mu);border:1px solid var(--bd);border-radius:16px;padding:0 12px;min-height:32px;align-items:center}.gs span{flex:none}.gs .gt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv{border:1px solid var(--bd);border-radius:12px;padding:14px;margin:10px 0}
 </style></head><body><div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div><script>
 /* data.js: 항목 저장 구조 ("날짜가 붙은 항목") */
 const KEY='diary.v1',A={};
@@ -283,23 +283,29 @@ document.addEventListener('input',e=>{const t=e.target;if(t.dataset.dt){dayRec()
 const D0=[250,248,244],DEF={bg:D0,bg2:[236,232,224],tx:[43,42,39]};
 const PAL=['#ffffff','#faf8f4','#f1ece3','#e8e4dc','#cfcac0','#8a857c','#4a4640','#2b2a27','#111111','#fde2e4','#fad2e1','#e2ece9','#bee1e6','#dfe7fd','#cddafd','#fff1e6','#fdf2b3','#e9f5db','#cfe1b9','#b7d3a8','#9fc5a0','#f4a6a6','#e57373','#d9534f','#f6b26b','#e0944a','#f1c232','#76a5af','#6fa8dc','#4a7bd0','#8e7cc3','#c27ba0'];
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-function setColor(k,c,box){S.cfg[k]=c;save();applyCfg();box=box||document.querySelector(`.cp[data-k="${k}"]`);box.querySelectorAll('[data-i]').forEach(x=>{if(x!==document.activeElement)x.value=c[+x.dataset.i]});box.querySelector('.sw').style.background='rgb('+c+')';box.querySelector('.hx').textContent=hex(c);const pk=box.querySelector('.pk');if(pk)pk.value=hex(c)}
+function setColor(k,c,box){cdGet()[k]=c;box=box||document.querySelector(`.cp[data-k="${k}"]`);box.querySelectorAll('[data-i]').forEach(x=>{if(x!==document.activeElement)x.value=c[+x.dataset.i]});box.querySelector('.sw').style.background='rgb('+c+')';box.querySelector('.hx').textContent=hex(c);const pk=box.querySelector('.pk');if(pk)pk.value=hex(c);pvUpdate()}
 const hex=c=>'#'+c.map(n=>pad(n.toString(16))).join('');
 const idb=(m,k,v)=>new Promise(ok=>{try{const q=indexedDB.open('diary-fs',1);q.onupgradeneeded=()=>q.result.createObjectStore('f');q.onsuccess=()=>{const s=q.result.transaction('f',m==='get'?'readonly':'readwrite').objectStore('f'),r=m==='get'?s.get(k):s.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)};q.onerror=()=>ok(null)}catch(e){ok(null)}});
 async function useFont(buf){try{const f=new FontFace('UserFont',buf);await f.load();document.fonts.add(f);document.body.style.fontFamily="'UserFont','Noto Sans KR',system-ui,sans-serif"}catch(e){toast('글꼴을 읽지 못했어요')}}
 function applyCfg(){const c=S.cfg,r=document.documentElement.style,g=a=>a?'rgb('+a+')':'';r.setProperty('--bg',g(c.bg));r.setProperty('--tx',g(c.tx));
 document.body.style.background=c.grad&&c.bg2?`linear-gradient(160deg,${g(c.bg||D0)},${g(c.bg2)}) fixed`:'';document.getElementById('app').style.zoom=(c.fs||15)/15}
-function rgbRow(k,label){const c=S.cfg[k]||DEF[k];return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${S.cfg[k]?hex(c):'기본색 (움직이면 바뀌어요)'}</p></div>`}
-function setHTML(){const c=S.cfg,has=!!c.pw;return `<div class="hd"><h1>설정</h1></div><div id="ls">${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(c.name||'')}" aria-label="이름">
-<p class="mu st">화면</p><p class="mu" style="margin:0">화면 비율은 기기에 맞게 자동으로 맞춰져요.</p>${rgbRow('bg','배경색')}<div class="rw" style="margin:8px 0"><button class="ch${c.grad?' on':''}" data-a="grad">그라데이션 ${c.grad?'켜짐':'꺼짐'}</button><button class="ch" data-a="cfgreset">색·크기 기본값</button></div>${c.grad?rgbRow('bg2','그라데이션 끝색'):''}${rgbRow('tx','글자색')}
-<p class="mu st">글자 크기 <span id="fsv">${c.fs||15}px</span></p><input id="fs" type="range" min="12" max="22" value="${c.fs||15}" style="width:100%" aria-label="글자 크기">
+function rgbRow(k,label){const c=cdGet()[k]||DEF[k];return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${cdGet()[k]?hex(c):'기본색 (움직이면 바뀌어요)'}</p></div>`}
+function setHTML(){const c=S.cfg,d=cdGet(),has=!!c.pw;return `<div class="hd"><h1>설정</h1></div><div id="ls">${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(c.name||'')}" aria-label="이름">
+<p class="mu st">화면</p><p class="mu" style="margin:0">화면 비율은 기기에 맞게 자동으로 맞춰져요.</p>${rgbRow('bg','배경색')}<div class="rw" style="margin:8px 0"><button class="ch${d.grad?' on':''}" data-a="grad">그라데이션 ${d.grad?'켜짐':'꺼짐'}</button></div>${d.grad?rgbRow('bg2','그라데이션 끝색'):''}${rgbRow('tx','글자색')}
+<p class="mu st">글자 크기 <span id="fsv">${d.fs}px</span></p><input id="fs" type="range" min="12" max="22" value="${d.fs}" style="width:100%" aria-label="글자 크기"><div id="pv" class="pv" style="${pvCss()}">가나다라 미리보기 ABC 123</div><div class="rw" style="margin:10px 0"><button class="ch on" data-a="cfgsave">저장해서 적용</button><button class="ch" data-a="cfgcancel">되돌리기</button><button class="ch" data-a="cfgreset">기본값</button></div><p class="mu">저장을 눌러야 화면에 적용돼요.</p>
 <p class="mu st">글꼴</p><p class="mu" style="margin:0 0 6px">${esc(c.fontName||'기본 글꼴')}</p><div class="rw"><button class="ch" data-a="fontp">글꼴 파일 첨부</button><button class="ch" data-a="fontx">기본으로</button></div><p class="mu">ttf, otf, woff 파일을 쓸 수 있어요.</p>
 <p class="mu st">시간 표기</p><button class="ch on" data-a="fmt2">${S.fmt12?'오전·오후 표기':'24시간 표기'} (누르면 바뀌어요)</button>
 <p class="mu st">잠금</p><button class="ch${c.lock?' on':''}" data-a="lockt">일기 잠금 ${c.lock?'켜짐':'꺼짐'}</button><input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호" style="margin-top:8px"><input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button class="ch" data-a="chpw">비밀번호 ${has?'바꾸기':'정하기'}</button>
 <p class="mu st">준비 중</p><p class="mu" style="margin-bottom:24px">알람과 위젯은 안드로이드 앱으로 만드는 단계에서 붙여요.</p></div>`}
 A.pcol=d=>setColor(d.k,rgbOf(d.h));
-A.grad=()=>{S.cfg.grad=!S.cfg.grad;if(!S.cfg.bg2)S.cfg.bg2=[...DEF.bg2];save();applyCfg();render()};
-A.cfgreset=()=>{['bg','bg2','tx'].forEach(k=>delete S.cfg[k]);S.cfg.grad=false;S.cfg.fs=15;save();applyCfg();render()};
+const pvCss=()=>{const d=cdGet(),g=a=>'rgb('+a+')';return `background:${d.grad&&d.bg2?`linear-gradient(160deg,${g(d.bg||D0)},${g(d.bg2)})`:g(d.bg||D0)};color:${g(d.tx||DEF.tx)};font-size:${d.fs}px`};
+function pvUpdate(){const e=$('pv');if(e)e.style.cssText=pvCss()}
+let CD=null;
+const cdGet=()=>CD||(CD={bg:S.cfg.bg?[...S.cfg.bg]:null,bg2:S.cfg.bg2?[...S.cfg.bg2]:null,tx:S.cfg.tx?[...S.cfg.tx]:null,grad:!!S.cfg.grad,fs:S.cfg.fs||15});
+A.grad=()=>{const d=cdGet();d.grad=!d.grad;if(d.grad&&!d.bg2)d.bg2=[...DEF.bg2];render()};
+A.cfgsave=()=>{const d=cdGet();['bg','bg2','tx'].forEach(k=>{if(d[k])S.cfg[k]=d[k];else delete S.cfg[k]});S.cfg.grad=d.grad;S.cfg.fs=d.fs;CD=null;save();applyCfg();toast('화면 설정을 적용했어요');render()};
+A.cfgcancel=()=>{CD=null;render()};
+A.cfgreset=()=>{CD={bg:null,bg2:null,tx:null,grad:false,fs:15};render()};
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
 A.lockt=async()=>{if(S.cfg.lock&&S.cfg.pw&&await hash($('sp0').value)!==S.cfg.pw){toast('아래 현재 비밀번호 칸에 적고 눌러 주세요');return}S.cfg.lock=!S.cfg.lock;save();render()};
 A.chpw=async()=>{const n=$('sp1').value;if(S.cfg.pw&&await hash($('sp0').value)!==S.cfg.pw){toast('현재 비밀번호가 달라요');return}if(n.length<4){toast('새 비밀번호는 4자 이상이에요');return}S.cfg.pw=await hash(n);save();render();toast('비밀번호를 저장했어요')};
@@ -308,9 +314,9 @@ FF.onchange=async()=>{const f=FF.files[0];FF.value='';if(!f)return;const b=await
 A.fontp=()=>FF.click();
 A.fontx=async()=>{await idb('put','font',null);S.cfg.fontName='';save();document.body.style.fontFamily='';render()};
 document.addEventListener('input',e=>{const t=e.target,k=t.dataset.k;
-if(k&&(t.classList.contains('rg')||t.classList.contains('rn'))){const i=+t.dataset.i,v=Math.max(0,Math.min(255,Math.round(+t.value||0))),c=[...(S.cfg[k]||DEF[k])];c[i]=v;setColor(k,c,t.closest('.cp'))}
+if(k&&(t.classList.contains('rg')||t.classList.contains('rn'))){const i=+t.dataset.i,v=Math.max(0,Math.min(255,Math.round(+t.value||0))),c=[...(cdGet()[k]||DEF[k])];c[i]=v;setColor(k,c,t.closest('.cp'))}
 else if(k&&t.classList.contains('pk'))setColor(k,rgbOf(t.value),t.closest('.cp'))
-else if(t.id==='fs'){S.cfg.fs=+t.value;save();applyCfg();$('fsv').textContent=t.value+'px'}
+else if(t.id==='fs'){cdGet().fs=+t.value;$('fsv').textContent=t.value+'px';pvUpdate()}
 else if(t.id==='sn'){S.cfg.name=t.value;save()}});
 idb('get','font').then(b=>{if(b)useFont(b)});
 
@@ -326,8 +332,8 @@ function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0,c;i<s.length;i++){c=s.
 const pid=d=>'p'+h53(d).toString(36);
 const syBase=()=>SY.db.collection('users').doc(SY.user.uid);
 const syScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
-async function syInit(){try{const b='https://www.gstatic.com/firebasejs/10.12.2/';await syScript(b+'firebase-app-compat.js');await syScript(b+'firebase-auth-compat.js');await syScript(b+'firebase-firestore-compat.js');firebase.initializeApp(FBC);SY.auth=firebase.auth();SY.db=firebase.firestore();SY.ready=true;SY.auth.onAuthStateChanged(syAuthChanged)}catch(e){SY.st='nosdk'}syUi()}
-const syUi=()=>{if(tab==='설정'&&!T&&!R)render()};
+async function syInit(){try{const b='https://www.gstatic.com/firebasejs/10.12.2/';await syScript(b+'firebase-app-compat.js');await syScript(b+'firebase-auth-compat.js');await syScript(b+'firebase-firestore-compat.js');firebase.initializeApp(FBC);SY.auth=firebase.auth();SY.db=firebase.firestore();SY.ready=true;SY.auth.onAuthStateChanged(syAuthChanged)}catch(e){SY.st='nosdk'}if(tab==='설정'&&!T&&!R)render()}
+const syUi=()=>{const e=document.getElementById('sy-st');if(e)e.textContent=[SYMSG[SY.st],SY.msg].filter(Boolean).join(' · ')};
 function syKick(){if(!SY.user)return;if(SY.busy){SY.again=true;return}clearTimeout(SY.t);SY.t=setTimeout(syCycle,1500)}
 const syCycle=async()=>{await syPull();await syPush()};
 const syMetaKey=()=>'diary.sync.'+SY.user.uid;
@@ -376,11 +382,9 @@ const lj=local[ym]?jst(local[ym]):null,was=M.last[ym],remoteNew=(r.u||0)>(M.u[ym
 if(was!==undefined&&!remoteNew)continue;
 await applyMonth(ym,r,pho,was===undefined?!!local[ym]:lj!==was);changed=true;
 M.last[ym]=jst(mstrip(r));M.u[ym]=r.u||0}
-if(mt.exists){const rm=mt.data(),cur=jst(splitS().meta),was=M.last._meta;
-if(was!==undefined&&cur===was){if((rm.u||0)>(M.u._meta||0)){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}}
-else if(wasEmpty){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}
-else{const ri=new Set(S.reps.map(x=>x.id));(rm.reps||[]).forEach(x=>{if(!ri.has(x.id))S.reps.push(x)});changed=true}
-M.last._meta=jst(mstrip(rm));M.u._meta=rm.u||0}
+if(mt.exists){const rm=mt.data(),cur=jst(splitS().meta),was=M.last._meta,remoteNew=(rm.u||0)>(M.u._meta||0);
+const takeMeta=()=>{S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12},unionReps=()=>{const ri=new Set(S.reps.map(x=>x.id));(rm.reps||[]).forEach(x=>{if(!ri.has(x.id))S.reps.push(x)})};
+if(was===undefined||remoteNew){if(was===undefined?wasEmpty:cur===was)takeMeta();else unionReps();changed=true;M.last._meta=jst(mstrip(rm));M.u._meta=rm.u||0}}
 if(changed){SY.busy=false;save();SY.busy=true;applyCfg()}
 syMetaSave();SY.st='ok';SY.msg=''}catch(e){SY.st='err';SY.msg=e.code||e.message}
 SY.busy=false;syUi();if(changed&&!T&&!R)render()}
@@ -395,8 +399,8 @@ if(!T&&!R)render()}
 function syErr(e){SY.msg=SYERR[e.code]||e.message||'오류가 났어요.';toast(SY.msg);syUi()}
 function accHTML(){const u=SY.user,h='<p class="mu st">계정 · 동기화</p>';
 if(!SY.ready)return h+`<p class="mu">${SY.st==='nosdk'?'로그인 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.':'준비 중…'}</p>`;
-if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" style="margin:0 0 8px">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
-return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
+if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" id="sy-st" style="margin:0 0 8px">${esc([SYMSG[SY.st],SY.msg].filter(Boolean).join(' · '))}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
+return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" id="sy-st" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
 A.sygoogle=async()=>{const p=new firebase.auth.GoogleAuthProvider();try{await SY.auth.signInWithPopup(p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)){SY.auth.signInWithRedirect(p);return}syErr(e)}};
 const syMail=async f=>{const e=$('sy-e').value.trim(),p=$('sy-p').value;if(!e||!p){syErr({message:'이메일과 비밀번호를 적어 주세요.'});return}try{await SY.auth[f](e,p)}catch(x){syErr(x)}};
 A.syin=()=>syMail('signInWithEmailAndPassword');
@@ -411,9 +415,9 @@ const TABS=['일정','달력','기록','설정'],NEXT={'달력':'한 달 달력�
 const app=document.getElementById('app');
 function toast(m,label,fn){const t=document.getElementById('toast');t.textContent=m;if(label){const b=document.createElement('button');b.textContent=label;b.className='tu';b.onclick=()=>{fn();t.className=''};t.appendChild(b)}t.className=label?'on act':'on';clearTimeout(toast.h);toast.h=setTimeout(()=>{t.className=''},label?5000:2200)}
 function tabsHTML(){return `<nav class="tb" aria-label="메뉴">${TABS.map(t=>`<button class="${t===tab?'a':''}" data-a="tab" data-t="${t}">${t}</button>`).join('')}</nav>`}
-function render(){app.innerHTML=(tab==='일정'?headHTML()+weekHTML()+`<div id="ls">${itemsListHTML()}</div>${repListHTML()}`+barHTML():tab==='달력'?calHTML():tab==='기록'?recHTML():tab==='설정'?setHTML():`<div class="hd"><h1>${tab}</h1></div><p class="mu" style="margin-top:24px">${NEXT[tab]}</p><div id="ls"></div>`)+tabsHTML();if(tab==='달력'&&DY&&!T&&!R)drawDay()}
+function render(){const _o=document.getElementById('ls'),_s=_o&&window._lt===tab?_o.scrollTop:0;app.innerHTML=(tab==='일정'?headHTML()+weekHTML()+`<div id="ls">${itemsListHTML()}</div>${repListHTML()}`+barHTML():tab==='달력'?calHTML():tab==='기록'?recHTML():tab==='설정'?setHTML():`<div class="hd"><h1>${tab}</h1></div><p class="mu" style="margin-top:24px">${NEXT[tab]}</p><div id="ls"></div>`)+tabsHTML();window._lt=tab;const _n=document.getElementById('ls');if(_n&&_s)_n.scrollTop=_s;if(tab==='달력'&&DY&&!T&&!R)drawDay()}
 app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
-A.tab=d=>{DY=false;if(tab==='기록'&&d.t!=='기록')U=false;tab=d.t;if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};render()};
+A.tab=d=>{DY=false;CD=null;if(tab==='기록'&&d.t!=='기록')U=false;tab=d.t;if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};render()};
 load();migGoals();applyCfg();render();wxLoad();syInit();
 
 </script></body></html>
