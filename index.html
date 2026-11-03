@@ -82,7 +82,7 @@ textarea{font:inherit}
 const KEY='diary.v1',A={};
 let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true}},DR={title:'',time:null,alarm:null};
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick()}
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -289,13 +289,13 @@ async function useFont(buf){try{const f=new FontFace('UserFont',buf);await f.loa
 function applyCfg(){const c=S.cfg,r=document.documentElement.style,g=a=>a?'rgb('+a+')':'';r.setProperty('--bg',g(c.bg));r.setProperty('--tx',g(c.tx));
 document.body.style.background=c.grad&&c.bg2?`linear-gradient(160deg,${g(c.bg||D0)},${g(c.bg2)}) fixed`:'';document.getElementById('app').style.zoom=(c.fs||15)/15}
 function rgbRow(k,label){const c=S.cfg[k]||DEF[k];return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${S.cfg[k]?hex(c):'기본색 (움직이면 바뀌어요)'}</p></div>`}
-function setHTML(){const c=S.cfg,has=!!c.pw;return `<div class="hd"><h1>설정</h1></div><div id="ls"><p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(c.name||'')}" aria-label="이름">
+function setHTML(){const c=S.cfg,has=!!c.pw;return `<div class="hd"><h1>설정</h1></div><div id="ls">${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(c.name||'')}" aria-label="이름">
 <p class="mu st">화면</p><p class="mu" style="margin:0">화면 비율은 기기에 맞게 자동으로 맞춰져요.</p>${rgbRow('bg','배경색')}<div class="rw" style="margin:8px 0"><button class="ch${c.grad?' on':''}" data-a="grad">그라데이션 ${c.grad?'켜짐':'꺼짐'}</button><button class="ch" data-a="cfgreset">색·크기 기본값</button></div>${c.grad?rgbRow('bg2','그라데이션 끝색'):''}${rgbRow('tx','글자색')}
 <p class="mu st">글자 크기 <span id="fsv">${c.fs||15}px</span></p><input id="fs" type="range" min="12" max="22" value="${c.fs||15}" style="width:100%" aria-label="글자 크기">
 <p class="mu st">글꼴</p><p class="mu" style="margin:0 0 6px">${esc(c.fontName||'기본 글꼴')}</p><div class="rw"><button class="ch" data-a="fontp">글꼴 파일 첨부</button><button class="ch" data-a="fontx">기본으로</button></div><p class="mu">ttf, otf, woff 파일을 쓸 수 있어요.</p>
 <p class="mu st">시간 표기</p><button class="ch on" data-a="fmt2">${S.fmt12?'오전·오후 표기':'24시간 표기'} (누르면 바뀌어요)</button>
 <p class="mu st">잠금</p><button class="ch${c.lock?' on':''}" data-a="lockt">일기 잠금 ${c.lock?'켜짐':'꺼짐'}</button><input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호" style="margin-top:8px"><input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button class="ch" data-a="chpw">비밀번호 ${has?'바꾸기':'정하기'}</button>
-<p class="mu st">준비 중</p><p class="mu" style="margin-bottom:24px">날씨는 외부 접속이 되는 곳(직접 올린 주소·앱)에서 자동으로 나와요. 기기 간 동기화, 위젯, AI 연동은 서버에 올리는 단계에서 붙여요.</p></div>`}
+<p class="mu st">준비 중</p><p class="mu" style="margin-bottom:24px">알람과 위젯은 안드로이드 앱으로 만드는 단계에서 붙여요.</p></div>`}
 A.pcol=d=>setColor(d.k,rgbOf(d.h));
 A.grad=()=>{S.cfg.grad=!S.cfg.grad;if(!S.cfg.bg2)S.cfg.bg2=[...DEF.bg2];save();applyCfg();render()};
 A.cfgreset=()=>{['bg','bg2','tx'].forEach(k=>delete S.cfg[k]);S.cfg.grad=false;S.cfg.fs=15;save();applyCfg();render()};
@@ -314,6 +314,97 @@ else if(t.id==='sn'){S.cfg.name=t.value;save()}});
 idb('get','font').then(b=>{if(b)useFont(b)});
 
 
+/* sync.js: Firebase 로그인(구글·이메일) + 월 단위 클라우드 동기화. 로컬 우선: 저장은 기기에 먼저, 로그인 중이면 뒤이어 올려요 */
+const FBC={apiKey:"AIzaSyCTjGJN87POXA6NPkLlyFRt7s2Fkfmrbq4",authDomain:"my-diary-449a0.firebaseapp.com",projectId:"my-diary-449a0",storageBucket:"my-diary-449a0.firebasestorage.app",messagingSenderId:"571869487303",appId:"1:571869487303:web:1ae31d5c2df9ca1be1dee2"};
+const SY={ready:false,user:null,st:'off',msg:'',busy:false,again:false,t:null,meta:{last:{},u:{},ph:{}}};
+const SYMSG={ok:'동기화됨',push:'올리는 중…',pull:'불러오는 중…',err:'동기화 오류',off:''};
+const SYERR={'auth/invalid-credential':'이메일이나 비밀번호가 달라요.','auth/wrong-password':'이메일이나 비밀번호가 달라요.','auth/user-not-found':'가입되지 않은 이메일이에요.','auth/email-already-in-use':'이미 가입된 이메일이에요.','auth/weak-password':'비밀번호는 6자 이상이어야 해요.','auth/invalid-email':'이메일 형식이 달라요.','auth/popup-closed-by-user':'로그인 창이 닫혔어요.','auth/unauthorized-domain':'이 주소가 Firebase 승인된 도메인에 없어요.','auth/network-request-failed':'인터넷 연결을 확인해 주세요.','auth/too-many-requests':'시도가 많아요. 잠시 후 다시 해 주세요.'};
+const jst=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0,c;i<s.length;i++){c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return 4294967296*(2097151&b)+(a>>>0)}
+const pid=d=>'p'+h53(d).toString(36);
+const syBase=()=>SY.db.collection('users').doc(SY.user.uid);
+const syScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+async function syInit(){try{const b='https://www.gstatic.com/firebasejs/10.12.2/';await syScript(b+'firebase-app-compat.js');await syScript(b+'firebase-auth-compat.js');await syScript(b+'firebase-firestore-compat.js');firebase.initializeApp(FBC);SY.auth=firebase.auth();SY.db=firebase.firestore();SY.ready=true;SY.auth.onAuthStateChanged(syAuthChanged)}catch(e){SY.st='nosdk'}syUi()}
+const syUi=()=>{if(tab==='설정'&&!T&&!R)render()};
+function syKick(){if(!SY.user)return;if(SY.busy){SY.again=true;return}clearTimeout(SY.t);SY.t=setTimeout(syCycle,1500)}
+const syCycle=async()=>{await syPull();await syPush()};
+const syMetaKey=()=>'diary.sync.'+SY.user.uid;
+function syMetaLoad(){let m=null;try{m=JSON.parse(localStorage.getItem(syMetaKey()))}catch(e){}SY.meta=Object.assign({last:{},u:{},ph:{}},m)}
+function syMetaSave(){try{localStorage.setItem(syMetaKey(),JSON.stringify(SY.meta))}catch(e){}}
+/* ---- 내 데이터를 월별 문서로 쪼개기 ---- */
+function splitS(){const photos={},months={},ym=d=>String(d).slice(0,7);
+const get=k=>months[k]||(months[k]={items:[],diary:{},moods:{},goals:[],rdone:{},skip:{}});
+S.items.forEach(i=>{const{photos:_,...r}=i;get(ym(i.date)).items.push(r)});
+Object.entries(S.diary).forEach(([d,e])=>{const ids=(e.photos||[]).map(p=>{const id=pid(p);photos[id]=p;return id});if(e.text||e.title||ids.length)get(ym(d)).diary[d]={title:e.title||'',text:e.text||'',photos:ids}});
+Object.entries(S.moods).forEach(([d,m])=>{get(ym(d)).moods[d]=m});
+Object.entries(S.goalsM).forEach(([k,g])=>{if(g.length)get(k).goals=g});
+['rdone','skip'].forEach(f=>Object.keys(S[f]).forEach(k=>{get(ym(k))[f][k]=1}));
+return{meta:clone({reps:S.reps,cfg:S.cfg,fmt12:S.fmt12}),months:clone(months),photos}}
+const emptyDoc=r=>!(r.items||[]).length&&!Object.keys(r.diary||{}).length&&!Object.keys(r.moods||{}).length&&!(r.goals||[]).length&&!Object.keys(r.rdone||{}).length&&!Object.keys(r.skip||{}).length;
+const mstrip=r=>{const{u,...x}=r;return clone(x)};
+const emptyLocal=()=>!S.items.length&&!S.reps.length&&!Object.keys(S.diary).length&&!Object.keys(S.goalsM).length&&!Object.keys(S.moods).length;
+/* ---- 올리기 ---- */
+async function syPush(){if(!SY.user||SY.busy)return;SY.busy=true;SY.st='push';syUi();let merged=false;
+try{const base=syBase(),M=SY.meta,{meta,photos}=splitS();let months=splitS().months;const t=Date.now();
+for(const[id,data]of Object.entries(photos))if(!M.ph[id]){await base.collection('photos').doc(id).set({data,t});M.ph[id]=1}
+for(const ym of Object.keys(months)){let doc=months[ym],j=jst(doc);if(M.last[ym]===j)continue;
+const rd=await base.collection('months').doc(ym).get();
+if(rd.exists&&(rd.data().u||0)>(M.u[ym]||0)){const pho={};Object.values(S.diary).forEach(e=>(e.photos||[]).forEach(p=>{pho[pid(p)]=p}));await applyMonth(ym,rd.data(),pho,true);merged=true;months=splitS().months;doc=months[ym];j=jst(doc)}
+await base.collection('months').doc(ym).set(Object.assign({},doc,{u:t}));M.last[ym]=j;M.u[ym]=t}
+for(const ym of Object.keys(M.last))if(ym!=='_meta'&&!months[ym]){await base.collection('months').doc(ym).set({items:[],diary:{},moods:{},goals:[],rdone:{},skip:{},u:t});delete M.last[ym];M.u[ym]=t}
+const mj=jst(meta);if(M.last._meta!==mj){await base.collection('meta').doc('main').set(Object.assign({},meta,{u:t}));M.last._meta=mj;M.u._meta=t}
+syMetaSave();SY.st='ok';SY.msg=''}catch(e){SY.st='err';SY.msg=e.code||e.message}
+if(merged){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!T&&!R)render()}
+SY.busy=false;syUi();if(SY.again){SY.again=false;syKick()}}
+/* ---- 불러오기 ---- */
+async function applyMonth(ym,r,pho,union){const inM=k=>String(k).startsWith(ym),rd=r.diary||{};
+const need=new Set();Object.values(rd).forEach(e=>(e.photos||[]).forEach(id=>{if(!pho[id])need.add(id)}));
+for(const id of need){const p=await syBase().collection('photos').doc(id).get();if(p.exists)pho[id]=p.data().data}
+if(!union){S.items=S.items.filter(i=>!inM(i.date)).concat(r.items||[]);Object.keys(S.diary).filter(inM).forEach(k=>delete S.diary[k]);Object.keys(S.moods).filter(inM).forEach(k=>delete S.moods[k]);S.goalsM[ym]=r.goals||[];['rdone','skip'].forEach(f=>{Object.keys(S[f]).filter(inM).forEach(k=>delete S[f][k]);Object.assign(S[f],r[f]||{})})}
+else{const ids=new Set(S.items.map(i=>i.id));(r.items||[]).forEach(i=>{if(!ids.has(i.id))S.items.push(i)});const gl=S.goalsM[ym]||[],gi=new Set(gl.map(g=>g.id));(r.goals||[]).forEach(g=>{if(!gi.has(g.id))gl.push(g)});S.goalsM[ym]=gl;['rdone','skip'].forEach(f=>Object.assign(S[f],Object.assign({},r[f]||{},S[f])))}
+for(const[d,e]of Object.entries(rd)){const ph=(e.photos||[]).map(id=>pho[id]).filter(Boolean);
+if(!union||!S.diary[d])S.diary[d]={title:e.title||'',text:e.text||'',photos:ph};
+else{const l=S.diary[d];if(!l.text)l.text=e.text||'';if(!l.title)l.title=e.title||'';l.photos=l.photos||[];const have=new Set(l.photos.map(pid));ph.forEach(p=>{if(!have.has(pid(p)))l.photos.push(p)})}}
+Object.entries(r.moods||{}).forEach(([d,m])=>{if(!union||!S.moods[d])S.moods[d]=m})}
+async function syPull(){if(!SY.user||SY.busy)return;SY.busy=true;SY.st='pull';syUi();let changed=false;
+try{const base=syBase(),M=SY.meta,[ms,mt]=await Promise.all([base.collection('months').get(),base.collection('meta').doc('main').get()]);
+const local=splitS().months,pho={},wasEmpty=emptyLocal();Object.values(S.diary).forEach(e=>(e.photos||[]).forEach(p=>{pho[pid(p)]=p}));
+for(const d of ms.docs){const ym=d.id,r=d.data();if(emptyDoc(r)&&!local[ym]){continue}
+const lj=local[ym]?jst(local[ym]):null,was=M.last[ym],remoteNew=(r.u||0)>(M.u[ym]||0);
+if(was!==undefined&&!remoteNew)continue;
+await applyMonth(ym,r,pho,was===undefined?!!local[ym]:lj!==was);changed=true;
+M.last[ym]=jst(mstrip(r));M.u[ym]=r.u||0}
+if(mt.exists){const rm=mt.data(),cur=jst(splitS().meta),was=M.last._meta;
+if(was!==undefined&&cur===was){if((rm.u||0)>(M.u._meta||0)){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}}
+else if(wasEmpty){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}
+else{const ri=new Set(S.reps.map(x=>x.id));(rm.reps||[]).forEach(x=>{if(!ri.has(x.id))S.reps.push(x)});changed=true}
+M.last._meta=jst(mstrip(rm));M.u._meta=rm.u||0}
+if(changed){SY.busy=false;save();SY.busy=true;applyCfg()}
+syMetaSave();SY.st='ok';SY.msg=''}catch(e){SY.st='err';SY.msg=e.code||e.message}
+SY.busy=false;syUi();if(changed&&!T&&!R)render()}
+/* ---- 로그인 상태 ---- */
+async function syAuthChanged(u){SY.user=u;SY.msg='';
+if(u){let o=null;try{o=localStorage.getItem('diary.owner')}catch(e){}
+if(o&&o!==u.uid){if(!confirm('이 기기에는 다른 계정의 데이터가 있어요. 새 계정으로 바꾸면 이 기기의 기존 데이터를 지우고 새 계정 데이터를 불러와요. 계속할까요?')){SY.user=null;await SY.auth.signOut();return}
+Object.assign(S,{items:[],goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{}});SY.user=null;save();SY.user=u}
+try{localStorage.setItem('diary.owner',u.uid)}catch(e){}
+syMetaLoad();await syPull();await syPush()}else SY.st='off';
+if(!T&&!R)render()}
+function syErr(e){SY.msg=SYERR[e.code]||e.message||'오류가 났어요.';toast(SY.msg);syUi()}
+function accHTML(){const u=SY.user,h='<p class="mu st">계정 · 동기화</p>';
+if(!SY.ready)return h+`<p class="mu">${SY.st==='nosdk'?'로그인 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.':'준비 중…'}</p>`;
+if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" style="margin:0 0 8px">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
+return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
+A.sygoogle=async()=>{const p=new firebase.auth.GoogleAuthProvider();try{await SY.auth.signInWithPopup(p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)){SY.auth.signInWithRedirect(p);return}syErr(e)}};
+const syMail=async f=>{const e=$('sy-e').value.trim(),p=$('sy-p').value;if(!e||!p){syErr({message:'이메일과 비밀번호를 적어 주세요.'});return}try{await SY.auth[f](e,p)}catch(x){syErr(x)}};
+A.syin=()=>syMail('signInWithEmailAndPassword');
+A.syup=()=>syMail('createUserWithEmailAndPassword');
+A.syout=async()=>{await SY.auth.signOut()};
+A.sysync=async()=>{await syPull();await syPush()};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SY.user)syPull().then(syPush)});
+
+
 /* app.js: 하단 메뉴, 화면 그리기, 시작 */
 const TABS=['일정','달력','기록','설정'],NEXT={'달력':'한 달 달력은 2단계에서 만들어요.','기록':'기록 화면은 3단계에서 만들어요.','설정':'설정 화면은 5단계에서 만들어요.'};let tab='일정';
 const app=document.getElementById('app');
@@ -322,6 +413,6 @@ function tabsHTML(){return `<nav class="tb" aria-label="메뉴">${TABS.map(t=>`<
 function render(){app.innerHTML=(tab==='일정'?headHTML()+weekHTML()+`<div id="ls">${itemsListHTML()}</div>${repListHTML()}`+barHTML():tab==='달력'?calHTML():tab==='기록'?recHTML():tab==='설정'?setHTML():`<div class="hd"><h1>${tab}</h1></div><p class="mu" style="margin-top:24px">${NEXT[tab]}</p><div id="ls"></div>`)+tabsHTML();if(tab==='달력'&&DY&&!T&&!R)drawDay()}
 app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
 A.tab=d=>{DY=false;if(tab==='기록'&&d.t!=='기록')U=false;tab=d.t;if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};render()};
-load();migGoals();applyCfg();render();wxLoad();
+load();migGoals();applyCfg();render();wxLoad();syInit();
 
 </script></body></html>
