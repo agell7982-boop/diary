@@ -81,6 +81,15 @@ textarea{font:inherit}
 .pbtn{padding:8px 10px;border-radius:12px;border:1px solid var(--bd);font-size:13px;display:flex;align-items:center;gap:8px;text-align:left;background:var(--sf)}
 .pdot{width:20px;height:20px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,0.1)}
 .save-bar{position:sticky;bottom:0;background:var(--sf);border:1px solid var(--bd);padding:10px 14px;border-radius:16px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:14px 0 8px}
+.set-card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0 16px}
+.set-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.set-card-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;margin:0}
+.set-card-desc{font-size:12px;color:var(--mu);margin:0 0 10px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--ln);min-height:46px}
+.set-row:first-of-type{border-top:none;padding-top:2px}
+.set-col{padding:10px 0;border-top:1px solid var(--ln)}
+.set-col:first-of-type{border-top:none;padding-top:2px}
+.set-tog-btn{width:100%;padding:10px;border:1px dashed var(--bd);border-radius:12px;color:var(--mu);font-size:13px;margin:10px 0;text-align:center;background:var(--bg)}
 </style></head><body><div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div><script>
 /* data.js: 항목 저장 구조 */
 const KEY='diary.v1',A={};
@@ -292,7 +301,7 @@ const GRAD_PRESETS=[
   {name:'모던 미드나잇',bg:[28,30,34],bg2:[18,20,24],tx:[240,242,245]}
 ];
 
-let TEMP_CFG=null;
+let TEMP_CFG=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false;
 function getActiveCfg(){return TEMP_CFG||S.cfg}
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const hex=c=>'#'+c.map(n=>pad(n.toString(16))).join('');
@@ -325,14 +334,14 @@ function updateColorPreview(k,c,box){
 
 function rgbRow(k,label){
   const c=getActiveCfg()[k]||DEF[k];
-  return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${hex(c)}</p></div>`;
+  return `<div class="cp" data-k="${k}" style="margin:8px 0"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${hex(c)}</p></div>`;
 }
 
 function notiStatusText(){
-  if(!("Notification" in window))return '이 기기/브라우저는 시스템 알림을 지원하지 않아요.';
-  if(Notification.permission==='granted')return '✅ 알림 허용됨 (백그라운드에서도 울림)';
-  if(Notification.permission==='denied')return '❌ 알림 차단됨 (브라우저 주소창 설정에서 허용 필요)';
-  return '⚠️ 알림 권한 필요';
+  if(!("Notification" in window))return '이 기기는 알림을 지원하지 않아요.';
+  if(Notification.permission==='granted')return '✅ 허용됨 (백그라운드 알림 가능)';
+  if(Notification.permission==='denied')return '❌ 차단됨 (브라우저 주소창 설정 확인)';
+  return '⚠️ 권한 필요 (아래 버튼 터치)';
 }
 
 function setHTML(){
@@ -343,53 +352,155 @@ function setHTML(){
   const hasCustomAudio=!!S.cfg.customAudioName;
 
   return `<div class="hd"><h1>설정</h1></div><div id="ls">
-<div style="display:flex;align-items:center;gap:14px;margin:12px 0 16px;padding:12px 16px;border-radius:18px;background:var(--sf);border:1px solid var(--bd)">
+
+<!-- 1. 앱 헤더 & 프로필 -->
+<div style="display:flex;align-items:center;gap:14px;margin:12px 0 14px;padding:12px 16px;border-radius:18px;background:var(--sf);border:1px solid var(--bd)">
   <img src="icon-192.png" alt="앱 아이콘" style="width:48px;height:48px;border-radius:12px;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.06))">
-  <div>
-    <b style="font-size:16px;display:block">나만의 일기장</b>
-    <span class="mu" style="font-size:12px">모바일 맞춤형 다이어리</span>
+  <div style="flex:1;min-width:0">
+    <input id="sn" style="border:0;outline:0;font-size:16px;font-weight:500;background:none;width:100%;color:var(--tx);padding:0" placeholder="내 이름 쓰기" value="${esc(S.cfg.name||'')}" aria-label="이름">
+    <span class="mu" style="font-size:12px">나만의 감성 일기장</span>
   </div>
 </div>
-${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(S.cfg.name||'')}" aria-label="이름">
-<p class="mu st">화면 색상 & 그라데이션</p>
-<p class="mu" style="margin:0 0 6px">버튼을 누르면 바로 화면에 미리보기로 보이고, 아래 <b>[색상 저장]</b>을 누르면 최종 적용돼요.</p>
-<p class="mu" style="font-size:12px;margin:4px 0 2px">추천 그라데이션 테마</p>
-<div class="presets">${GRAD_PRESETS.map((p,idx)=>`<button class="pbtn" data-a="preset" data-i="${idx}"><span class="pdot" style="background:linear-gradient(135deg,rgb(${p.bg}),rgb(${p.bg2}))"></span><span>${p.name}</span></button>`).join('')}</div>
-${rgbRow('bg','배경색')}
-<div class="rw" style="margin:8px 0"><button class="ch${c.grad?' on':''}" data-a="grad">그라데이션 ${c.grad?'켜짐':'꺼짐'}</button><button class="ch" data-a="cfgreset">색상 기본값</button></div>
-${c.grad?rgbRow('bg2','그라데이션 끝색'):''}
-${rgbRow('tx','글자색')}
 
-<div class="save-bar">
-  <div style="flex:1"><span id="color-save-status" class="mu">${isModified?'🎨 미리보기 중 (저장해야 유지돼요)':'현재 색상이 적용된 상태예요'}</span></div>
-  <button class="ch" data-a="cfgcancel">되돌리기</button>
-  <button class="ch on" data-a="cfgsave">색상 저장</button>
+<!-- 2. 계정 & 클라우드 백업 카드 -->
+<div class="set-card">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>☁️ 계정 & 백업</span></div>
+    <span class="mu" style="font-size:12px" id="sy-status-text">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</span>
+  </div>
+  ${accCardHTML()}
 </div>
 
-<p class="mu st">알림 및 소리</p>
-<p class="mu" style="margin:0 0 6px">알림 권한: ${notiStatusText()}</p>
-<div class="rw" style="margin:6px 0"><button class="ch on" data-a="reqnoti">알림 권한 받기</button></div>
+<!-- 3. 화면 테마 & 색상 카드 -->
+<div class="set-card">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>🎨 화면 테마 & 색상</span></div>
+    <span class="mu" style="font-size:12px">${c.grad?'그라데이션 ON':'단색 배경'}</span>
+  </div>
+  <p class="set-card-desc">원하는 감성 테마를 터치하고 아래 <b>[색상 저장]</b>을 눌러주세요.</p>
+  
+  <div class="presets">${GRAD_PRESETS.map((p,idx)=>`<button class="pbtn" data-a="preset" data-i="${idx}"><span class="pdot" style="background:linear-gradient(135deg,rgb(${p.bg}),rgb(${p.bg2}))"></span><span>${p.name}</span></button>`).join('')}</div>
 
-<label class="mu" for="sel-snd" style="margin-top:10px;display:block">알람 소리 선택</label>
-<select id="sel-snd" class="in">
-  <option value="chime"${curSound==='chime'?' selected':''}>맑은 차임 (기본)</option>
-  <option value="beep"${curSound==='beep'?' selected':''}>디지털 시계 비프</option>
-  <option value="bell"${curSound==='bell'?' selected':''}>부드러운 종소리</option>
-  <option value="marimba"${curSound==='marimba'?' selected':''}>경쾌한 마림바</option>
-  <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
-</select>
-<div class="rw" style="margin:6px 0 10px">
-  <button class="ch" data-a="testsnd">소리 미리듣기 🔔</button>
-  <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
-  ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
+  <div class="set-row">
+    <span style="font-size:14px">부드러운 그라데이션</span>
+    <button class="ch${c.grad?' on':''}" data-a="grad">${c.grad?'켜짐':'꺼짐'}</button>
+  </div>
+
+  <button class="set-tog-btn" data-a="colortog">${COLOR_DETAIL_OPEN?'▲ 직접 색상 상세 설정 닫기':'▼ 직접 색상 상세 설정하기 (RGB / 팔레트)'}</button>
+
+  ${COLOR_DETAIL_OPEN ? `
+    <div style="margin-top:8px">
+      ${rgbRow('bg','배경색')}
+      ${c.grad?rgbRow('bg2','그라데이션 끝색'):''}
+      ${rgbRow('tx','글자색')}
+      <div style="text-align:right;margin:6px 0"><button class="ch" data-a="cfgreset">색상 기본값으로</button></div>
+    </div>
+  ` : ''}
+
+  <div class="save-bar">
+    <div style="flex:1"><span id="color-save-status" class="mu" style="font-size:12px">${isModified?'🎨 미리보기 중 (저장해야 유지돼요)':'현재 색상 적용됨'}</span></div>
+    <button class="ch" data-a="cfgcancel">되돌리기</button>
+    <button class="ch on" data-a="cfgsave">색상 저장</button>
+  </div>
 </div>
-<p class="mu">스마트폰이나 PC에 저장된 mp3, wav, m4a 음악 파일을 알람음으로 쓸 수 있어요.</p>
 
-<p class="mu st">글자 크기 <span id="fsv">${S.cfg.fs||15}px</span></p><input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
-<p class="mu st">글꼴</p><p class="mu" style="margin:0 0 6px">${esc(S.cfg.fontName||'기본 글꼴')}</p><div class="rw"><button class="ch" data-a="fontp">글꼴 파일 첨부</button><button class="ch" data-a="fontx">기본으로</button></div><p class="mu">ttf, otf, woff 파일을 쓸 수 있어요.</p>
-<p class="mu st">시간 표기</p><button class="ch on" data-a="fmt2">${S.fmt12?'오전·오후 표기':'24시간 표기'} (누르면 바뀌어요)</button>
-<p class="mu st">잠금</p><button class="ch${S.cfg.lock?' on':''}" data-a="lockt">일기 잠금 ${S.cfg.lock?'켜짐':'꺼짐'}</button><input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호" style="margin-top:8px"><input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button class="ch" data-a="chpw">비밀번호 ${has?'바꾸기':'정하기'}</button></div>`;
+<!-- 4. 알람 및 사운드 카드 -->
+<div class="set-card">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>🔔 알람 및 사운드</span></div>
+  </div>
+  
+  <div class="set-row">
+    <div>
+      <div style="font-size:14px">푸시 알림 권한</div>
+      <div class="mu" style="font-size:12px">${notiStatusText()}</div>
+    </div>
+    <button class="ch on" data-a="reqnoti">권한 받기</button>
+  </div>
+
+  <div class="set-col">
+    <label class="mu" for="sel-snd" style="display:block;margin-bottom:6px">알람 소리 선택</label>
+    <select id="sel-snd" class="in" style="margin:0 0 8px">
+      <option value="chime"${curSound==='chime'?' selected':''}>맑은 차임 (기본)</option>
+      <option value="beep"${curSound==='beep'?' selected':''}>디지털 시계 비프</option>
+      <option value="bell"${curSound==='bell'?' selected':''}>부드러운 종소리</option>
+      <option value="marimba"${curSound==='marimba'?' selected':''}>경쾌한 마림바</option>
+      <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
+    </select>
+    <div class="rw" style="margin:4px 0">
+      <button class="ch" data-a="testsnd">소리 미리듣기 🔔</button>
+      <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
+      ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
+    </div>
+    <p class="mu" style="font-size:12px;margin:6px 0 0">내 폰에 있는 mp3 음악 파일을 알람음으로 등록할 수 있어요.</p>
+  </div>
+</div>
+
+<!-- 5. 글꼴 & 보기 설정 카드 -->
+<div class="set-card">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>🔤 글꼴 & 보기</span></div>
+  </div>
+
+  <div class="set-col">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:14px">글자 크기</span>
+      <b id="fsv" style="font-size:14px;color:var(--ac)">${S.cfg.fs||15}px</b>
+    </div>
+    <input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
+  </div>
+
+  <div class="set-row">
+    <div>
+      <div style="font-size:14px">글꼴 파일</div>
+      <div class="mu" style="font-size:12px">${esc(S.cfg.fontName||'기본 글꼴 (Noto Sans)')}</div>
+    </div>
+    <div class="rw" style="gap:6px">
+      <button class="ch" data-a="fontp">파일 첨부</button>
+      ${S.cfg.fontName?'<button class="ch" data-a="fontx">기본으로</button>':''}
+    </div>
+  </div>
+
+  <div class="set-row">
+    <div>
+      <div style="font-size:14px">시간 표기 방식</div>
+      <div class="mu" style="font-size:12px">${S.fmt12?'오전/오후 12시간제':'24시간제'}</div>
+    </div>
+    <button class="ch on" data-a="fmt2">변경</button>
+  </div>
+</div>
+
+<!-- 6. 일기 보안 & 잠금 카드 -->
+<div class="set-card" style="margin-bottom:28px">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>🔐 일기 보안 & 잠금</span></div>
+    <button class="ch${S.cfg.lock?' on':''}" data-a="lockt">${S.cfg.lock?'잠금 켜짐':'잠금 꺼짐'}</button>
+  </div>
+
+  <div class="set-col">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px">비밀번호 설정</div>
+        <div class="mu" style="font-size:12px">${has?'비밀번호 설정됨':'아직 설정되지 않음'}</div>
+      </div>
+      <button class="ch" data-a="pwtog">${PW_BOX_OPEN?'닫기':(has?'비밀번호 변경':'비밀번호 등록')}</button>
+    </div>
+    ${PW_BOX_OPEN ? `
+      <div style="margin-top:10px">
+        <input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호">
+        <input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호" style="margin-top:4px">
+        <button class="ch on" style="width:100%;margin-top:8px" data-a="chpw">비밀번호 저장</button>
+      </div>
+    ` : ''}
+  </div>
+</div>
+
+</div>`;
 }
+
+A.colortog=()=>{COLOR_DETAIL_OPEN=!COLOR_DETAIL_OPEN;render()};
+A.pwtog=()=>{PW_BOX_OPEN=!PW_BOX_OPEN;render()};
+A.emailtog=()=>{EMAIL_LOGIN_OPEN=!EMAIL_LOGIN_OPEN;render()};
 
 A.preset=d=>{
   const p=GRAD_PRESETS[+d.i];
@@ -724,10 +835,22 @@ try{localStorage.setItem('diary.owner',u.uid)}catch(e){}
 syMetaLoad();await syPull();await syPush()}else SY.st='off';
 if(!T&&!R)render()}
 function syErr(e){SY.msg=SYERR[e.code]||e.message||'오류가 났어요.';toast(SY.msg);syUi()}
-function accHTML(){const u=SY.user,h='<p class="mu st">계정 · 동기화</p>';
-if(!SY.ready)return h+`<p class="mu">${SY.st==='nosdk'?'로그인 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.':'준비 중…'}</p>`;
-if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" style="margin:0 0 8px" id="sy-status-text">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
-return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
+function accCardHTML(){
+  const u=SY.user;
+  if(!SY.ready)return `<p class="mu" style="margin:4px 0">${SY.st==='nosdk'?'로그인 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.':'클라우드 모듈 준비 중…'}</p>`;
+  if(u)return `<div class="set-row"><div><div style="font-size:14px;font-weight:500">${esc(u.email||'')}</div><div class="mu" style="font-size:12px">Google / 이메일 연동됨</div></div><div class="rw" style="gap:6px"><button class="ch on" data-a="sysync">동기화</button><button class="ch" data-a="syout">로그아웃</button></div></div>`;
+
+  return `<button class="ch on" data-a="sygoogle" style="width:100%;margin:4px 0 8px">Google로 간편 로그인</button>
+  <button class="set-tog-btn" style="margin:4px 0" data-a="emailtog">${EMAIL_LOGIN_OPEN?'▲ 이메일 로그인 닫기':'▼ 이메일로 로그인 / 회원가입'}</button>
+  ${EMAIL_LOGIN_OPEN ? `
+    <div style="margin-top:8px">
+      <input id="sy-e" class="in" type="email" placeholder="이메일 주소" autocomplete="email" aria-label="이메일">
+      <input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:4px">
+      <p class="mu" style="margin:4px 0 8px;font-size:12px">${esc(SY.msg||'')}</p>
+      <div class="rw"><button class="ch on" style="flex:1" data-a="syin">로그인</button><button class="ch" style="flex:1" data-a="syup">회원가입</button></div>
+    </div>
+  ` : ''}`;
+}
 A.sygoogle=async()=>{const p=new firebase.auth.GoogleAuthProvider();try{await SY.auth.signInWithPopup(p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)){SY.auth.signInWithRedirect(p);return}syErr(e)}};
 const syMail=async f=>{const e=$('sy-e').value.trim(),p=$('sy-p').value;if(!e||!p){syErr({message:'이메일과 비밀번호를 적어 주세요.'});return}try{await SY.auth[f](e,p)}catch(x){syErr(x)}};
 A.syin=()=>syMail('signInWithEmailAndPassword');
