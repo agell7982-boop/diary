@@ -1,0 +1,21 @@
+{
+  "name": "diary",
+  "version": "1.0.0",
+  "description": "감성적인 일정 관리, 월별 목표 및 기분 기록, 비밀번호 보안 다이어리, 그리고 스마트 알람 기능을 제공하는 **단일 파일 기반 독립형 PWA(Progressive Web App)** 애플리케이션입니다.",
+  "main": "sw.js",
+  "scripts": {
+    "build": "node copy-www.js",
+    "sync": "node copy-www.js && npx cap sync android",
+    "open": "npx cap open android"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1"
+  }
+}

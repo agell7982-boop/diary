@@ -1,0 +1,10 @@
+{
+  "appId": "com.diary.app",
+  "appName": "다이어리",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#4A7BD0"
+    }
+  }
+}
