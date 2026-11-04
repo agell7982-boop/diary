@@ -187,6 +187,8 @@ function setHTML(){
 
     ${ALARM_GUIDE_OPEN ? `
       <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6">
+        <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" style="display:block;text-align:center;text-decoration:none;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin:4px 0 6px;">📥 안드로이드 전용 알람 앱(APK) 다운로드</a>
+        <p class="mu" style="font-size:11px;margin:0 0 12px;text-align:center">앱이 완전히 꺼져도 100% 울리는 안드로이드 전용 설치 파일입니다.</p>
         <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 3가지 필수 팁:</b>
         <ol style="margin:0 0 10px;padding-left:18px" class="mu">
           <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴(⋮ 또는 공유 버튼)에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 독립 앱으로 등록되어 백그라운드 유지력이 대폭 강화됩니다.</li>
