@@ -93,9 +93,9 @@ textarea{font:inherit}
 </style></head><body><div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div><script>
 /* data.js: 항목 저장 구조 */
 const KEY='diary.v1',A={};
-let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true,alarmSound:'chime'}},DR={title:'',time:null,alarm:null};
+let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true,alarmSound:'chime',alarmVol:80}},DR={title:'',time:null,alarm:null};
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick();syncScheduledNotifications()}
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -303,7 +303,8 @@ const GRAD_PRESETS=[
   {name:'모던 미드나잇',bg:[28,30,34],bg2:[18,20,24],tx:[240,242,245]}
 ];
 
-let TEMP_CFG=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false;
+let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
+const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
 function getActiveCfg(){return TEMP_CFG||S.cfg}
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const hex=c=>'#'+c.map(n=>pad(n.toString(16))).join('');
@@ -350,7 +351,10 @@ function setHTML(){
   if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
   const c=getActiveCfg(),has=!!S.cfg.pw;
   const isModified=JSON.stringify(TEMP_CFG)!==JSON.stringify(S.cfg);
-  const curSound=S.cfg.alarmSound||'chime';
+  const curSound=TEMP_SND||S.cfg.alarmSound||'chime';
+  const curVol=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+  const isVolModified=TEMP_VOL!==null&&TEMP_VOL!==(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+  const isSndModified=(TEMP_SND!==null&&TEMP_SND!==(S.cfg.alarmSound||'chime'))||isVolModified;
   const hasCustomAudio=!!S.cfg.customAudioName;
 
   return `<div class="hd"><h1>설정</h1></div><div id="ls">
@@ -410,6 +414,7 @@ function setHTML(){
 <div class="set-card">
   <div class="set-card-head">
     <div class="set-card-title"><span>🔔 알람 및 사운드</span></div>
+    <span class="mu" style="font-size:12px">${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound}</span>
   </div>
   
   <div class="set-row">
@@ -434,7 +439,49 @@ function setHTML(){
       <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
       ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
     </div>
-    <p class="mu" style="font-size:12px;margin:6px 0 0">내 폰에 있는 mp3 음악 파일을 알람음으로 등록할 수 있어요.</p>
+    <p class="mu" style="font-size:12px;margin:6px 0 10px">내 폰에 있는 mp3 음악 파일을 알람음으로 등록할 수 있어요.</p>
+
+    <!-- 알람 음량 조절 슬라이더 -->
+    <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin:8px 0 10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:500">${curVol===0?'🔇 음소거':curVol<40?'🔈 알람 음량 (작게)':curVol<75?'🔉 알람 음량 (중간)':'🔊 알람 음량 (크게)'}</span>
+        <b id="vol-val" style="font-size:13px;color:var(--ac)">${curVol}%</b>
+      </div>
+      <input id="alm-vol" type="range" min="0" max="100" step="5" value="${curVol}" style="width:100%" aria-label="알람 음량">
+    </div>
+
+    <div class="save-bar" style="margin:10px 0 4px">
+      <div style="flex:1">
+        <span id="snd-save-status" class="mu" style="font-size:12px">
+          ${isSndModified?'🎵 소리/음량이 변경되었어요 (저장 필요)':`현재 적용: ${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound} · ${curVol}%`}
+        </span>
+      </div>
+      ${isSndModified?'<button class="ch" data-a="sndcancel">취소</button>':''}
+      <button class="ch on" data-a="sendsave">알람 소리 저장</button>
+    </div>
+  </div>
+
+  <div class="set-col" style="margin-top:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:500">📱 꺼진 상태 / 백그라운드 알람 가이드</div>
+        <div class="mu" style="font-size:12px">앱이 닫혀 있거나 화면이 꺼져도 알림 받기</div>
+      </div>
+      <button class="ch" data-a="almtog">${ALARM_GUIDE_OPEN?'닫기':'보기'}</button>
+    </div>
+
+    ${ALARM_GUIDE_OPEN ? `
+      <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6">
+        <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 3가지 필수 팁:</b>
+        <ol style="margin:0 0 10px;padding-left:18px" class="mu">
+          <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴(⋮ 또는 공유 버튼)에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 독립 앱으로 등록되어 백그라운드 유지력이 대폭 강화됩니다.</li>
+          <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>나만의 일기장(또는 브라우저)</b> > 배터리 > <b>[제한 없음]</b>으로 변경하면 기기가 잠들어도 알람이 중단되지 않습니다.</li>
+          <li><b>서비스 워커 자동 스케줄링</b>: 안드로이드 Chrome 등 지원 브라우저에서는 시스템 스케줄러(TimestampTrigger)에 미리 등록되어 앱이 닫혀도 제시간에 알림이 울립니다.</li>
+        </ol>
+        <button class="ch on" style="width:100%;margin-top:6px" data-a="testbg">⚡ 5초 뒤 백그라운드 알람 테스트하기</button>
+        <p class="mu" style="font-size:11px;margin:6px 0 0;text-align:center">버튼 터치 후 즉시 화면을 끄거나 홈 화면으로 나가서 알람과 진동을 확인해 보세요.</p>
+      </div>
+    ` : ''}
   </div>
 </div>
 
@@ -553,7 +600,71 @@ A.cfgcancel=()=>{
 
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
 A.reqnoti=async()=>{if(!("Notification" in window)){toast('이 브라우저는 알림을 지원하지 않아요');return}const p=await Notification.requestPermission();render();toast(p==='granted'?'알림이 허용되었어요!':'알림 권한을 받지 못했어요')};
-A.testsnd=()=>{playAlarmSound(S.cfg.alarmSound||'chime');toast('알람 소리를 울렸어요 🔔')};
+A.almtog=()=>{ALARM_GUIDE_OPEN=!ALARM_GUIDE_OPEN;render()};
+A.testsnd=()=>{
+  const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+  playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v);
+  toast(`알람 소리를 울렸어요 🔔 (음량 ${v}%)`);
+};
+A.sendsave=()=>{
+  let changed=false;
+  if(TEMP_SND!==null){S.cfg.alarmSound=TEMP_SND;TEMP_SND=null;changed=true}
+  if(TEMP_VOL!==null){S.cfg.alarmVol=TEMP_VOL;TEMP_VOL=null;changed=true}
+  if(changed){
+    save();
+    render();
+    toast('알람 소리 및 음량이 성공적으로 저장되었어요 🔔');
+  }else{
+    toast('현재 설정이 이미 적용되어 있어요.');
+  }
+};
+A.sndcancel=()=>{
+  TEMP_SND=null;
+  TEMP_VOL=null;
+  render();
+  toast('소리 및 음량 변경을 취소했어요.');
+};
+A.testbg=async()=>{
+  if(!("Notification" in window)){toast('이 기기는 알림을 지원하지 않아요');return}
+  if(Notification.permission!=='granted'){
+    const p=await Notification.requestPermission();
+    if(p!=='granted'){toast('알림 권한을 먼저 허용해 주세요');return}
+  }
+  toast('5초 뒤 알람이 울려요! 지금 바로 화면을 끄거나 홈 화면으로 나가보세요.');
+  const targetTime=Date.now()+5000;
+  if(('showTrigger' in Notification.prototype)&&('TimestampTrigger' in window)&&window.SW_REG){
+    try{
+      await window.SW_REG.showNotification('[다이어리 알람 테스트] 🔔',{
+        body:'화면이 꺼진 상태에서도 알람이 성공적으로 도착했어요!',
+        icon:'icon-192.png',
+        badge:'favicon.png',
+        tag:'test_alarm_'+targetTime,
+        showTrigger:new TimestampTrigger(targetTime),
+        vibrate:[500,200,500,200,500],
+        requireInteraction:true,
+        data:{url:'./index.html'}
+      });
+    }catch(e){}
+  }
+  setTimeout(()=>{
+    const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+    playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v);
+    const notiOpts={
+      body:'화면이 꺼진 상태에서도 알람이 성공적으로 도착했어요!',
+      icon:'icon-192.png',
+      badge:'favicon.png',
+      tag:'test_alarm_now_'+Date.now(),
+      vibrate:[500,200,500,200,500],
+      requireInteraction:true,
+      data:{url:'./index.html'}
+    };
+    if(window.SW_REG&&window.SW_REG.showNotification){
+      window.SW_REG.showNotification('[다이어리 알람 테스트] 🔔',notiOpts);
+    }else{
+      try{new Notification('[다이어리 알람 테스트] 🔔',notiOpts);}catch(e){}
+    }
+  },5000);
+};
 
 /* 커스텀 음원 파일 업로드 및 삭제 */
 const AF=document.createElement('input');AF.type='file';AF.accept='audio/*';AF.hidden=true;document.body.appendChild(AF);
@@ -563,17 +674,19 @@ AF.onchange=async()=>{
   const buf=await f.arrayBuffer();
   await idb('put','alarmSoundCustom',{buf,name:f.name});
   S.cfg.customAudioName=f.name;
-  S.cfg.alarmSound='custom';
+  TEMP_SND='custom';
   save();
   render();
-  toast(`음원 [${f.name}]을 등록했어요!`);
-  playAlarmSound('custom');
+  toast(`음원 [${f.name}]을 등록했어요! [알람 소리 저장]을 눌러주세요.`);
+  const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+  playAlarmSound('custom',v);
 };
 A.audp=()=>AF.click();
 A.audx=async()=>{
   await idb('put','alarmSoundCustom',null);
   delete S.cfg.customAudioName;
-  S.cfg.alarmSound='chime';
+  if(S.cfg.alarmSound==='custom')S.cfg.alarmSound='chime';
+  if(TEMP_SND==='custom')TEMP_SND='chime';
   save();
   render();
   toast('등록한 음원을 삭제했어요');
@@ -588,9 +701,14 @@ A.fontx=async()=>{await idb('put','font',null);S.cfg.fontName='';save();document
 
 document.addEventListener('change',e=>{
   if(e.target.id==='sel-snd'){
-    S.cfg.alarmSound=e.target.value;
-    save();
-    playAlarmSound(e.target.value);
+    TEMP_SND=e.target.value;
+    const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+    playAlarmSound(e.target.value,v);
+    render();
+  }else if(e.target.id==='alm-vol'){
+    TEMP_VOL=+e.target.value;
+    playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',TEMP_VOL);
+    render();
   }
 });
 
@@ -601,6 +719,11 @@ if(k&&(t.classList.contains('rg')||t.classList.contains('rn'))){
   updateColorPreview(k,c,t.closest('.cp'));
 }
 else if(k&&t.classList.contains('pk'))updateColorPreview(k,rgbOf(t.value),t.closest('.cp'))
+else if(t.id==='alm-vol'){
+  TEMP_VOL=+t.value;
+  const el=$('vol-val');if(el)el.textContent=t.value+'%';
+  const st=$('snd-save-status');if(st)st.textContent='🎵 소리/음량이 변경되었어요 (저장 필요)';
+}
 else if(t.id==='fs'){S.cfg.fs=+t.value;save();applyCfg();$('fsv').textContent=t.value+'px'}
 else if(t.id==='sn'){S.cfg.name=t.value;save()}});
 idb('get','font').then(b=>{if(b)useFont(b)});
@@ -611,12 +734,19 @@ function getFiredAlarms(){try{return JSON.parse(localStorage.getItem(ALARM_KEY))
 function markAlarmFired(k){try{const f=getFiredAlarms();f[k]=Date.now();const old=Date.now()-7*864e5;for(const x in f){if(f[x]<old)delete f[x]}localStorage.setItem(ALARM_KEY,JSON.stringify(f))}catch(e){}}
 
 let curAudioNode=null;
-async function playAlarmSound(type){
+async function playAlarmSound(type, customVol){
   type=type||S.cfg.alarmSound||'chime';
+  const rawVol=customVol!==undefined?customVol:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+  const volScale=Math.max(0,Math.min(100,rawVol))/100;
+  if(volScale<=0)return;
+
   try{
     const AudioCtx=window.AudioContext||window.webkitAudioContext;
     if(!AudioCtx)return;
     const ctx=new AudioCtx();
+    const masterGain=ctx.createGain();
+    masterGain.gain.setValueAtTime(volScale,ctx.currentTime);
+    masterGain.connect(ctx.destination);
 
     // 1) 커스텀 음원 파일 재생
     if(type==='custom'){
@@ -626,7 +756,7 @@ async function playAlarmSound(type){
           const audioBuffer=await ctx.decodeAudioData(custom.buf.slice(0));
           const src=ctx.createBufferSource();
           src.buffer=audioBuffer;
-          src.connect(ctx.destination);
+          src.connect(masterGain);
           src.start(0);
           curAudioNode=src;
           return;
@@ -644,7 +774,7 @@ async function playAlarmSound(type){
         osc.frequency.setValueAtTime(1046.50,ctx.currentTime+st);
         gain.gain.setValueAtTime(0.18,ctx.currentTime+st);
         gain.gain.setValueAtTime(0,ctx.currentTime+st+0.08);
-        osc.connect(gain);gain.connect(ctx.destination);
+        osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+st);osc.stop(ctx.currentTime+st+0.09);
       });
     }else if(type==='bell'){ // 부드러운 종소리
@@ -654,7 +784,7 @@ async function playAlarmSound(type){
       osc.frequency.setValueAtTime(880,ctx.currentTime);
       gain.gain.setValueAtTime(0.35,ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.8);
-      osc.connect(gain);gain.connect(ctx.destination);
+      osc.connect(gain);gain.connect(masterGain);
       osc.start(ctx.currentTime);osc.stop(ctx.currentTime+1.85);
     }else if(type==='marimba'){ // 마림바 멜로디
       const seq=[{f:440,t:0},{f:554.37,t:0.12},{f:659.25,t:0.24},{f:880,t:0.36}];
@@ -665,7 +795,7 @@ async function playAlarmSound(type){
         osc.frequency.setValueAtTime(n.f,ctx.currentTime+n.t);
         gain.gain.setValueAtTime(0.3,ctx.currentTime+n.t);
         gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+0.25);
-        osc.connect(gain);gain.connect(ctx.destination);
+        osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+0.28);
       });
     }else{ // chime (기본: 맑은 차임)
@@ -684,7 +814,7 @@ async function playAlarmSound(type){
         osc.frequency.setValueAtTime(n.f,ctx.currentTime+n.t);
         gain.gain.setValueAtTime(0.25,ctx.currentTime+n.t);
         gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+n.d);
-        osc.connect(gain);gain.connect(ctx.destination);
+        osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+n.d+0.05);
       });
     }
@@ -717,14 +847,25 @@ function triggerAlarm(item, isRep){
   const offsetStr=item.alarm===0?'정시':item.alarm+'분 전';
   const label=isRep?'반복 일정':'일정';
   const subText=`${item.date} ${fmtTime(item.time)} ${label} (${offsetStr})`;
+  const bodyText=subText+(item.detail?' · '+item.detail:'');
 
   if("Notification" in window && Notification.permission==='granted'){
-    try{
-      new Notification(`[다이어리 ${isRep?'반복 ':''}알람] ${item.title}`,{
-        body:subText+(item.detail?' · '+item.detail:''),
-        icon:'icon-192.png'
+    const notiOpts={
+      body:bodyText,
+      icon:'icon-192.png',
+      badge:'favicon.png',
+      tag:`diary_alarm_${item.id||uid()}_${Date.now()}`,
+      vibrate:[500,200,500,200,500],
+      requireInteraction:true,
+      data:{url:'./index.html'}
+    };
+    if(window.SW_REG && window.SW_REG.showNotification){
+      window.SW_REG.showNotification(`[다이어리 ${isRep?'반복 ':''}알람] ${item.title}`, notiOpts).catch(()=>{
+        try{new Notification(`[다이어리 ${isRep?'반복 ':''}알람] ${item.title}`, notiOpts);}catch(e){}
       });
-    }catch(e){}
+    }else{
+      try{new Notification(`[다이어리 ${isRep?'반복 ':''}알람] ${item.title}`, notiOpts);}catch(e){}
+    }
   }
   showAlarmModal(item.title,subText,item.detail);
 }
@@ -767,6 +908,72 @@ function checkAlarms(){
       triggerAlarm({date:td,title:r.title,time:r.time,alarm:r.alarm,detail:r.detail}, true);
     }
   });
+}
+
+// 지원 브라우저(Chromium 등)의 시스템 알람 스케줄러(TimestampTrigger)에 미리 예약
+async function syncScheduledNotifications(){
+  if(!('serviceWorker' in navigator) || !window.SW_REG) return;
+  if(!("Notification" in window) || Notification.permission !== 'granted') return;
+  const hasTriggers = ('showTrigger' in Notification.prototype) && ('TimestampTrigger' in window);
+  if(!hasTriggers) return;
+
+  try {
+    const existing = await window.SW_REG.getNotifications({ includeTriggered: false });
+    const existingTags = new Set(existing.map(n => n.tag));
+    const now = Date.now(), maxFuture = now + 48 * 3600 * 1000, fired = getFiredAlarms();
+
+    (S.items||[]).forEach(item => {
+      if(!item.time || item.alarm === null || item.done) return;
+      const itemDateTime = new Date(`${item.date}T${item.time}:00`).getTime();
+      if(isNaN(itemDateTime)) return;
+      const triggerTime = itemDateTime - (item.alarm * 60 * 1000);
+      const key = `trig_${item.id}_${triggerTime}`;
+
+      if(triggerTime > now && triggerTime < maxFuture && !fired[`${item.id}_${triggerTime}`] && !existingTags.has(key)){
+        const offsetStr = item.alarm === 0 ? '정시' : item.alarm + '분 전';
+        window.SW_REG.showNotification(`[다이어리 알람] ${item.title}`, {
+          body: `${item.date} ${fmtTime(item.time)} 일정 (${offsetStr})${item.detail ? ' · ' + item.detail : ''}`,
+          icon: 'icon-192.png',
+          badge: 'favicon.png',
+          tag: key,
+          showTrigger: new TimestampTrigger(triggerTime),
+          vibrate: [500, 200, 500, 200, 500],
+          requireInteraction: true,
+          data: { url: './index.html' }
+        }).catch(()=>{});
+      }
+    });
+
+    [ymd(new Date()), ymd(new Date(now + 864e5))].forEach(td => {
+      (S.reps || []).forEach(r => {
+        if(!r.time || r.alarm === null || r.alarm === undefined) return;
+        if(!repOn(r, td)) return;
+        if(S.rdone && S.rdone[td + '|' + r.id]) return;
+        if(S.skip && S.skip[td + '|' + r.id]) return;
+
+        const repDateTime = new Date(`${td}T${r.time}:00`).getTime();
+        if(isNaN(repDateTime)) return;
+        const triggerTime = repDateTime - (r.alarm * 60 * 1000);
+        const key = `trig_rep_${r.id}_${td}_${triggerTime}`;
+
+        if(triggerTime > now && triggerTime < maxFuture && !fired[`rep_${r.id}_${td}_${triggerTime}`] && !existingTags.has(key)){
+          const offsetStr = r.alarm === 0 ? '정시' : r.alarm + '분 전';
+          window.SW_REG.showNotification(`[다이어리 반복 알람] ${r.title}`, {
+            body: `${td} ${fmtTime(r.time)} 반복 일정 (${offsetStr})${r.detail ? ' · ' + r.detail : ''}`,
+            icon: 'icon-192.png',
+            badge: 'favicon.png',
+            tag: key,
+            showTrigger: new TimestampTrigger(triggerTime),
+            vibrate: [500, 200, 500, 200, 500],
+            requireInteraction: true,
+            data: { url: './index.html' }
+          }).catch(()=>{});
+        }
+      });
+    });
+  } catch(e) {
+    console.warn('알람 스케줄링 예외:', e);
+  }
 }
 
 /* sync.js: Firebase 로그인 & 클라우드 동기화 (스크롤 튐 방지 및 쿨다운 적용) */
@@ -918,7 +1125,11 @@ app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.
 A.tab=d=>{
   DY=false;
   if(tab==='기록'&&d.t!=='기록')U=false;
-  if(tab==='설정'&&d.t!=='설정'&&TEMP_CFG){TEMP_CFG=null;applyCfg()}
+  if(tab==='설정'&&d.t!=='설정'){
+    if(TEMP_CFG){TEMP_CFG=null;applyCfg()}
+    TEMP_SND=null;
+    TEMP_VOL=null;
+  }
   tab=d.t;
   if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};
   render();
@@ -928,5 +1139,27 @@ A.tab=d=>{
 load();migGoals();applyCfg();render();wxLoad();syInit();
 setInterval(checkAlarms, 3000);
 setTimeout(checkAlarms, 500);
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      window.SW_REG=reg;
+      syncScheduledNotifications();
+    }).catch(e=>console.warn('SW 등록 실패:',e));
+  });
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='ALARM_CLICKED'){
+      checkAlarms();
+    }
+  });
+}
+window.addEventListener('focus', checkAlarms);
+window.addEventListener('pageshow', checkAlarms);
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden){
+    checkAlarms();
+    syncScheduledNotifications();
+  }
+});
 
 </script></body></html>
