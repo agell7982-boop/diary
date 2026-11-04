@@ -435,7 +435,7 @@ function setHTML(){
       <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
     </select>
     <div class="rw" style="margin:4px 0">
-      <button class="ch" data-a="testsnd">소리 미리듣기 🔔</button>
+      <button class="ch${isPreviewPlaying?' on':''}" data-a="testsnd">${isPreviewPlaying?'⏹️ 재생 정지':'소리 미리듣기 🔔'}</button>
       <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
       ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
     </div>
@@ -602,11 +602,17 @@ A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
 A.reqnoti=async()=>{if(!("Notification" in window)){toast('이 브라우저는 알림을 지원하지 않아요');return}const p=await Notification.requestPermission();render();toast(p==='granted'?'알림이 허용되었어요!':'알림 권한을 받지 못했어요')};
 A.almtog=()=>{ALARM_GUIDE_OPEN=!ALARM_GUIDE_OPEN;render()};
 A.testsnd=()=>{
-  const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
-  playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v);
-  toast(`알람 소리를 울렸어요 🔔 (음량 ${v}%)`);
+  if(isPreviewPlaying){
+    stopAlarmSound();
+    toast('재생을 멈췄어요 ⏹️');
+  }else{
+    const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+    playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v,true);
+    toast(`소리를 재생 중이에요 🔔 (음량 ${v}%)`);
+  }
 };
 A.sendsave=()=>{
+  stopAlarmSound();
   let changed=false;
   if(TEMP_SND!==null){S.cfg.alarmSound=TEMP_SND;TEMP_SND=null;changed=true}
   if(TEMP_VOL!==null){S.cfg.alarmVol=TEMP_VOL;TEMP_VOL=null;changed=true}
@@ -619,6 +625,7 @@ A.sendsave=()=>{
   }
 };
 A.sndcancel=()=>{
+  stopAlarmSound();
   TEMP_SND=null;
   TEMP_VOL=null;
   render();
@@ -703,12 +710,15 @@ document.addEventListener('change',e=>{
   if(e.target.id==='sel-snd'){
     TEMP_SND=e.target.value;
     const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
-    playAlarmSound(e.target.value,v);
+    playAlarmSound(e.target.value,v,true);
     render();
   }else if(e.target.id==='alm-vol'){
     TEMP_VOL=+e.target.value;
-    playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',TEMP_VOL);
-    render();
+    if(activeMasterGain&&activeAudioCtx&&activeAudioCtx.state==='running'){
+      updatePlayingVolume(TEMP_VOL);
+    }else{
+      playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',TEMP_VOL,true);
+    }
   }
 });
 
@@ -723,18 +733,47 @@ else if(t.id==='alm-vol'){
   TEMP_VOL=+t.value;
   const el=$('vol-val');if(el)el.textContent=t.value+'%';
   const st=$('snd-save-status');if(st)st.textContent='🎵 소리/음량이 변경되었어요 (저장 필요)';
+  if(activeMasterGain&&activeAudioCtx&&activeAudioCtx.state==='running'){
+    updatePlayingVolume(TEMP_VOL);
+  }
 }
 else if(t.id==='fs'){S.cfg.fs=+t.value;save();applyCfg();$('fsv').textContent=t.value+'px'}
 else if(t.id==='sn'){S.cfg.name=t.value;save()}});
 idb('get','font').then(b=>{if(b)useFont(b)});
 
-/* alarm.js: 알람 소리(내장 4종 + 커스텀 음원), 감시 루프 */
+/* alarm.js: 알람 소리(단일 인스턴스·실시간 음량 조절), 감시 루프 */
 const ALARM_KEY='diary.alarms.fired';
 function getFiredAlarms(){try{return JSON.parse(localStorage.getItem(ALARM_KEY))||{}}catch(e){return {}}}
 function markAlarmFired(k){try{const f=getFiredAlarms();f[k]=Date.now();const old=Date.now()-7*864e5;for(const x in f){if(f[x]<old)delete f[x]}localStorage.setItem(ALARM_KEY,JSON.stringify(f))}catch(e){}}
 
-let curAudioNode=null;
-async function playAlarmSound(type, customVol){
+let activeAudioCtx=null, activeMasterGain=null, activeSourceNodes=[], curAudioNode=null, isPreviewPlaying=false;
+
+function updatePreviewBtnUI(){
+  const btn=document.querySelector('[data-a="testsnd"]');
+  if(btn){
+    btn.textContent=isPreviewPlaying?'⏹️ 재생 정지':'소리 미리듣기 🔔';
+    if(isPreviewPlaying)btn.classList.add('on');else btn.classList.remove('on');
+  }
+}
+
+function stopAlarmSound(){
+  activeSourceNodes.forEach(src=>{try{src.stop()}catch(e){}});
+  activeSourceNodes=[];
+  if(curAudioNode){try{curAudioNode.stop()}catch(e){};curAudioNode=null}
+  if(activeAudioCtx){try{activeAudioCtx.close()}catch(e){};activeAudioCtx=null;activeMasterGain=null}
+  if(isPreviewPlaying){isPreviewPlaying=false;updatePreviewBtnUI()}
+}
+
+function updatePlayingVolume(rawVol){
+  const v=Math.max(0,Math.min(100,rawVol!==undefined?rawVol:80))/100;
+  if(activeMasterGain&&activeAudioCtx&&activeAudioCtx.state==='running'){
+    activeMasterGain.gain.setValueAtTime(v,activeAudioCtx.currentTime);
+  }
+}
+
+async function playAlarmSound(type, customVol, isPreview){
+  stopAlarmSound(); // 이전 재생 중인 음원을 즉시 중지하여 소리 겹침 방지
+
   type=type||S.cfg.alarmSound||'chime';
   const rawVol=customVol!==undefined?customVol:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
   const volScale=Math.max(0,Math.min(100,rawVol))/100;
@@ -744,9 +783,17 @@ async function playAlarmSound(type, customVol){
     const AudioCtx=window.AudioContext||window.webkitAudioContext;
     if(!AudioCtx)return;
     const ctx=new AudioCtx();
+    activeAudioCtx=ctx;
+
     const masterGain=ctx.createGain();
     masterGain.gain.setValueAtTime(volScale,ctx.currentTime);
     masterGain.connect(ctx.destination);
+    activeMasterGain=masterGain;
+
+    if(isPreview){
+      isPreviewPlaying=true;
+      updatePreviewBtnUI();
+    }
 
     // 1) 커스텀 음원 파일 재생
     if(type==='custom'){
@@ -757,16 +804,22 @@ async function playAlarmSound(type, customVol){
           const src=ctx.createBufferSource();
           src.buffer=audioBuffer;
           src.connect(masterGain);
+          src.onended=()=>{
+            if(activeAudioCtx===ctx)stopAlarmSound();
+          };
           src.start(0);
           curAudioNode=src;
+          activeSourceNodes=[src];
           return;
         }catch(err){console.warn('커스텀 음원 디코딩 실패, 기본 사운드로 대체',err)}
       }
     }
 
     // 2) 내장 사운드 (Web Audio API)
+    let totalDuration=0;
     if(type==='beep'){ // 디지털 시계 비프
       const beeps=[0, 0.15, 0.4, 0.55];
+      totalDuration=0.65;
       beeps.forEach(st=>{
         const osc=ctx.createOscillator();
         const gain=ctx.createGain();
@@ -776,8 +829,10 @@ async function playAlarmSound(type, customVol){
         gain.gain.setValueAtTime(0,ctx.currentTime+st+0.08);
         osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+st);osc.stop(ctx.currentTime+st+0.09);
+        activeSourceNodes.push(osc);
       });
     }else if(type==='bell'){ // 부드러운 종소리
+      totalDuration=1.9;
       const osc=ctx.createOscillator();
       const gain=ctx.createGain();
       osc.type='sine';
@@ -786,7 +841,9 @@ async function playAlarmSound(type, customVol){
       gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.8);
       osc.connect(gain);gain.connect(masterGain);
       osc.start(ctx.currentTime);osc.stop(ctx.currentTime+1.85);
+      activeSourceNodes.push(osc);
     }else if(type==='marimba'){ // 마림바 멜로디
+      totalDuration=0.65;
       const seq=[{f:440,t:0},{f:554.37,t:0.12},{f:659.25,t:0.24},{f:880,t:0.36}];
       seq.forEach(n=>{
         const osc=ctx.createOscillator();
@@ -797,8 +854,10 @@ async function playAlarmSound(type, customVol){
         gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+0.25);
         osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+0.28);
+        activeSourceNodes.push(osc);
       });
     }else{ // chime (기본: 맑은 차임)
+      totalDuration=1.5;
       const notes=[
         {f:523.25,t:0.00,d:0.18},
         {f:659.25,t:0.15,d:0.18},
@@ -816,9 +875,15 @@ async function playAlarmSound(type, customVol){
         gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+n.d);
         osc.connect(gain);gain.connect(masterGain);
         osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+n.d+0.05);
+        activeSourceNodes.push(osc);
       });
     }
-  }catch(e){console.warn('알람 소리 재생 실패:',e)}
+
+    setTimeout(()=>{
+      if(activeAudioCtx===ctx)stopAlarmSound();
+    }, (totalDuration+0.1)*1000);
+
+  }catch(e){console.warn('알람 소리 재생 실패:',e);stopAlarmSound()}
 }
 
 function showAlarmModal(title,sub,detail){
@@ -838,7 +903,7 @@ function showAlarmModal(title,sub,detail){
   document.body.appendChild(div);
   div.querySelector('#alarm-ok-btn').onclick=()=>{
     div.remove();
-    if(curAudioNode){try{curAudioNode.stop()}catch(e){}}
+    stopAlarmSound();
   };
 }
 
@@ -1124,6 +1189,7 @@ function render(){
 app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
 A.tab=d=>{
   DY=false;
+  stopAlarmSound();
   if(tab==='기록'&&d.t!=='기록')U=false;
   if(tab==='설정'&&d.t!=='설정'){
     if(TEMP_CFG){TEMP_CFG=null;applyCfg()}
