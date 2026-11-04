@@ -1,10 +1,10 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>나만의 일기장</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"><style>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>나만의 일기장</title><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><link rel="manifest" href="manifest.json"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet"><style>
 :root{--bg:#FAF8F4;--tx:#2B2A27;--mu:#6E695F;--ln:#ECE8E0;--bd:#E3DED4;--sf:#fff;--ok:#4F9A83;--no:#C2773F;--ac:#46688F;--rd:#C0392B;--rs:#FF9C8F;--bl:#2F6DB5;--bs:#9CC3F2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1F1E1B;--tx:#F0EDE6;--mu:#A8A398;--ln:#34322D;--bd:#3F3C36;--sf:#2A2824;--ok:#6FBFA5;--no:#E09A66;--ac:#8FB0D8;--rd:#FF8A80;--rs:#B3261E;--bl:#8FB8F0;--bs:#2F6DB5}}
 :root[data-theme="dark"]{--bg:#1F1E1B;--tx:#F0EDE6;--mu:#A8A398;--ln:#34322D;--bd:#3F3C36;--sf:#2A2824;--ok:#6FBFA5;--no:#E09A66;--ac:#8FB0D8;--rd:#FF8A80;--rs:#B3261E;--bl:#8FB8F0;--bs:#2F6DB5}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *{box-sizing:border-box}
-body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:400 15px/1.5 'Noto Sans KR',system-ui,sans-serif}
+body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:400 15px/1.5 'Noto Sans KR',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
 button,input,select{font:inherit;color:inherit}
 button{background:none;border:0;cursor:pointer;min-height:44px}
 #app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:24px 24px 0}
@@ -21,7 +21,7 @@ h1{font-weight:300;font-size:26px;margin:0}
 .dt{height:8px;display:flex;gap:2px;align-items:center}
 .y,.n{width:6px;height:6px;border-radius:50%;display:inline-block}
 .y{background:var(--ok)}.n{border:1.5px solid var(--no)}
-#ls{flex:1;overflow:auto}
+#ls{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
 .r{display:flex;align-items:center;border-bottom:1px solid var(--ln)}
 .ck{width:44px;height:52px;flex:none;position:relative}
 .ck::before{content:'';position:absolute;inset:16px 12px;border-radius:50%;border:1.5px solid var(--mu)}
@@ -36,12 +36,12 @@ h1{font-weight:300;font-size:26px;margin:0}
 .tb{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ln);margin:0 -24px;padding:6px 20px 12px}
 .tb button{color:var(--mu)}.tb .a{color:var(--tx);font-weight:500}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:5}
-.sh{background:var(--sf);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 24px calc(20px + env(safe-area-inset-bottom,0px));max-height:90%;overflow:auto}
+.sh{background:var(--sf);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 24px calc(20px + env(safe-area-inset-bottom,0px));max-height:90%;overflow:auto;-webkit-overflow-scrolling:touch}
 .in{width:100%;min-height:44px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);padding:0 12px;margin:4px 0 8px}
 .rw{display:flex;gap:8px}.rw .in{flex:1}
 .ch{border:1px solid var(--bd);border-radius:22px;padding:0 16px}
 .pr{background:var(--tx);color:var(--bg);margin-left:auto}
-#toast{z-index:20;position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast{z-index:50;position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap}
 #toast.on{opacity:1}
 textarea.in{padding:10px 12px;line-height:1.7;resize:vertical}
 .d.h b{color:var(--rd)}.d.a.h b{color:var(--rs)}.mu.hl{color:var(--rd)}
@@ -77,11 +77,14 @@ textarea{font:inherit}
 .sh .mp{border:0;margin:0;padding:0}
 .mc{position:relative}.gf{position:absolute;top:2px;right:8px;font-size:10px}
 .gs{display:flex;gap:4px;max-width:190px;font-size:13px;color:var(--mu);border:1px solid var(--bd);border-radius:16px;padding:0 12px;min-height:32px;align-items:center}.gs span{flex:none}.gs .gt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv{border:1px solid var(--bd);border-radius:12px;padding:14px;margin:10px 0}
+.presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}
+.pbtn{padding:8px 10px;border-radius:12px;border:1px solid var(--bd);font-size:13px;display:flex;align-items:center;gap:8px;text-align:left;background:var(--sf)}
+.pdot{width:20px;height:20px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,0.1)}
+.save-bar{position:sticky;bottom:0;background:var(--sf);border:1px solid var(--bd);padding:10px 14px;border-radius:16px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:14px 0 8px}
 </style></head><body><div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div><script>
-/* data.js: 항목 저장 구조 ("날짜가 붙은 항목") */
+/* data.js: 항목 저장 구조 */
 const KEY='diary.v1',A={};
-let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true}},DR={title:'',time:null,alarm:null};
+let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true,alarmSound:'chime'}},DR={title:'',time:null,alarm:null};
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick()}
 const pad=n=>String(n).padStart(2,'0');
@@ -100,8 +103,8 @@ if(pm&&h<12)h+=12;if(am&&h===12)h=0;return h>23||n>59?null:pad(h)+':'+pad(n)}
 function fmtTime(t){if(!t)return '종일';if(!S.fmt12)return t;const h=+t.slice(0,2);return (h<12?'오전 ':'오후 ')+(h%12||12)+':'+t.slice(3)}
 const ALARMS=[[null,'알람 없음'],[0,'정시'],[10,'10분 전'],[30,'30분 전']];
 
-/* holidays.js: 한국 공휴일 = 양력 고정일 + 음력(설날·추석·부처님오신날) 계산 + 대체공휴일 규칙 + 임시공휴일 표 */
-const HX={'2026-06-03':'지방선거'};/* 임시공휴일·선거일처럼 미리 계산할 수 없는 날: 확인된 것만 여기에 추가 */
+/* holidays.js: 한국 공휴일 */
+const HX={'2026-06-03':'지방선거'};
 const HC={},DAY=864e5;
 const iso=t=>t.toISOString().slice(0,10);
 const utc=(y,m,d)=>new Date(Date.UTC(y,m,d));
@@ -120,7 +123,7 @@ function holiday(k){return holidaysOf(+k.slice(0,4))[k]||null}
 function isRed(k){return new Date(k+'T12:00:00').getDay()===0||!!holiday(k)}
 function isSat(k){return new Date(k+'T12:00:00').getDay()===6}
 
-/* week.js: 1주일 달력 (월요일 시작) */
+/* week.js: 1주일 달력 */
 const WD='일월화수목금토';let sel=ymd(new Date()),wk=0;
 const dkey=k=>new Date(k+'T12:00:00');
 function shift(k,n){const d=dkey(k);d.setDate(d.getDate()+n);return ymd(d)}
@@ -136,21 +139,20 @@ A.today=()=>{sel=ymd(new Date());wk=0;render()};
 /* list.js: 선택한 날짜의 시간순 목록 */
 function listHTML(){return itemsListHTML()+repListHTML()}
 function itemsListHTML(){const it=itemsOn(sel);if(!it.length)return '<p class="mu" style="margin-top:24px">'+(tab==='일정'?'이 날은 비어 있어요. 아래에 적어 보세요.':'이 날은 비어 있어요.')+'</p>';
-return it.map(i=>`<div class="r"><button class="ck${i.done?' dn':''}" role="checkbox" aria-checked="${i.done}" aria-label="완료 표시" data-a="done" data-id="${i.id}"></button><button class="rb" data-a="open" data-id="${i.id}"><span class="mu tm">${fmtTime(i.time)}</span><span class="ti${i.done?' dd':''}">${esc(i.title)}</span><span class="mu">${i.detail?'메모 ':''}${i.alarm!==null?'알림':''}</span></button><button class="rd" data-a="rm" data-id="${i.id}" aria-label="삭제">삭제</button></div>`).join('')}
+return it.map(i=>`<div class="r"><button class="ck${i.done?' dn':''}" role="checkbox" aria-checked="${i.done}" aria-label="완료 표시" data-a="done" data-id="${i.id}"></button><button class="rb" data-a="open" data-id="${i.id}"><span class="mu tm">${fmtTime(i.time)}</span><span class="ti${i.done?' dd':''}">${esc(i.title)}</span><span class="mu">${i.detail?'메모 ':''}${i.alarm!==null?'⏰ ':''}</span></button><button class="rd" data-a="rm" data-id="${i.id}" aria-label="삭제">삭제</button></div>`).join('')}
 A.done=d=>{const i=S.items.find(x=>x.id===d.id);updItem(d.id,{done:!i.done});render()};
 A.open=d=>openSheet(d.id);
 function removeWithUndo(id){const i=S.items.find(x=>x.id===id);if(!i)return;const k=S.items.indexOf(i);delItem(id);render();toast('삭제했어요','되돌리기',()=>{S.items.splice(Math.min(k,S.items.length),0,i);save();render()})}
 A.rm=d=>removeWithUndo(d.id);
 
-/* input.js: 하단 입력줄 (제목, 시간, 반복 자리, 추가) */
+/* input.js: 하단 입력줄 */
 function barHTML(){return `<div class="ib"><input id="ti" placeholder="일정을 적어요" value="${esc(DR.title)}" aria-label="일정 입력" enterkeyhint="done"><button class="cb" data-a="dt">${DR.time?fmtTime(DR.time):'시간'}</button><button class="cb" data-a="rp">반복</button><button class="ad" data-a="new" aria-label="자세히 쓰기로 추가">+</button></div>`}
 A.dt=()=>openSheet(null,'time');A.new=()=>openSheet(null,'new');
-
 A.add=()=>{const t=DR.title.trim();if(!t){const e=document.getElementById('ti');if(e)e.focus();return}addItem({date:sel,title:t,time:DR.time,alarm:DR.alarm});DR={title:'',time:null,alarm:null};render()};
 document.addEventListener('input',e=>{if(e.target.id==='ti')DR.title=e.target.value});
 document.addEventListener('keydown',e=>{if(e.target.id==='ti'&&e.key==='Enter')A.add()});
 
-/* sheet.js: 시간·알람 설정 시트 (새 일정 입력과 기존 일정 수정에 같이 사용) */
+/* sheet.js: 시간·알람 설정 시트 */
 let T=null;const SH=document.getElementById('sheet'),$=id=>document.getElementById(id);
 function openSheet(id,mode){const i=id&&S.items.find(x=>x.id===id);T={id:id||null,full:!!(i||mode==='new'),title:i?i.title:(mode==='new'?DR.title:''),detail:i?(i.detail||''):'',time:i?i.time:DR.time,alarm:i?i.alarm:DR.alarm,msg:''};drawSheet()}
 function closeSheet(){const back=DY&&(T||R);T=null;R=null;SH.innerHTML='';if(back)drawDay();else{DY=false;GS=false;GE=null}}
@@ -164,7 +166,7 @@ function drawSheet(){SH.innerHTML=`<div class="ov" data-a="ovx"><div class="sh" 
 +`<label class="mu" for="q-x">시간 (직접 쓰기)</label><input id="q-x" class="in" value="${T.time?fmtTime(T.time):''}" placeholder="예: 7:30, 오후 7시 30분"><div class="rw">${selHTML()}</div>`
 +`<p class="mu" style="margin:4px 0 8px">${T.msg||'비워 두면 종일 일정이에요.'}</p><div class="rw"><button class="ch" data-a="fmt">${S.fmt12?'오전·오후 표기':'24시간 표기'}</button></div>`
 +`<label class="mu" for="q-l">알람</label><select id="q-l" class="in"${T.time?'':' disabled'}>${ALARMS.map(([v,l])=>`<option value="${v===null?'':v}"${T.alarm===v?' selected':''}>${l}</option>`).join('')}</select>`
-+`<p class="mu" style="margin:4px 0 8px">알람은 설정만 저장돼요. 실제로 울리는 건 이후 단계에서 붙여요.</p>`
++`<p class="mu" style="margin:4px 0 8px">설정한 시간에 소리와 알림창으로 알려드려요.</p>`
 +`<div class="rw">${T.id?'<button class="ch" style="color:var(--no)" data-a="del">삭제</button>':''}<button class="ch pr" data-a="ok">완료</button></div></div></div>`}
 SH.addEventListener('change',e=>{if(!T)return;const i=e.target.id;
 if(i==='q-x'){const v=e.target.value.trim();if(!v){T.time=null;T.msg=''}else{const p=parseTime(v);if(p){T.time=p;T.msg=''}else T.msg='시간을 이해하지 못했어요. 예: 7:30, 오후 7시 30분'}if(T.time===null)T.alarm=null;drawSheet()}
@@ -175,10 +177,12 @@ else if(i==='q-d')T.detail=e.target.value});
 SH.addEventListener('input',e=>{if(!T)return;if(e.target.id==='q-d')T.detail=e.target.value;if(e.target.id==='q-t')T.title=e.target.value});
 SH.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;if(b.dataset.a==='ovx'){if(e.target===b)closeSheet();return}if(A[b.dataset.a])A[b.dataset.a](b.dataset)});
 A.fmt=()=>{S.fmt12=!S.fmt12;save();drawSheet();render()};
-A.ok=()=>{if(!T)return;if(T.id){const o=S.items.find(x=>x.id===T.id);updItem(T.id,{title:T.title.trim()||o.title,detail:T.detail,time:T.time,alarm:T.alarm})}else if(T.full){const t=T.title.trim();if(!t){T.msg='제목을 적어 주세요.';drawSheet();return}addItem({date:sel,title:t,detail:T.detail,time:T.time,alarm:T.alarm});DR={title:'',time:null,alarm:null}}else{DR.time=T.time;DR.alarm=T.alarm}closeSheet();render()};
+A.ok=()=>{if(!T)return;
+if(T.alarm!==null && "Notification" in window && Notification.permission==='default'){Notification.requestPermission()}
+if(T.id){const o=S.items.find(x=>x.id===T.id);updItem(T.id,{title:T.title.trim()||o.title,detail:T.detail,time:T.time,alarm:T.alarm})}else if(T.full){const t=T.title.trim();if(!t){T.msg='제목을 적어 주세요.';drawSheet();return}addItem({date:sel,title:t,detail:T.detail,time:T.time,alarm:T.alarm});DR={title:'',time:null,alarm:null}}else{DR.time=T.time;DR.alarm=T.alarm}closeSheet();render()};
 A.del=()=>{const id=T.id;closeSheet();removeWithUndo(id)};
 
-/* month.js: 한 달 달력 (목표 · 월 격자 · 선택한 날 패널). 일정 데이터=data.js, 공휴일=holidays.js, 점/별=week.js, 목록=list.js 를 같이 씀 */
+/* month.js: 한 달 달력 */
 let cm={y:new Date().getFullYear(),m:new Date().getMonth()};
 const MOODS=['😀','🙂','😐','😟','😢'];
 function setSel(k){sel=k;const s=dkey(k),t=new Date();s.setDate(s.getDate()-s.getDay());t.setHours(12,0,0,0);t.setDate(t.getDate()-t.getDay());wk=Math.round((s-t)/(7*DAY))}
@@ -211,15 +215,14 @@ A.mtoday=()=>{const t=new Date();cm={y:t.getFullYear(),m:t.getMonth()};setSel(ym
 A.mood=d=>{if(S.moods[sel]===d.m)delete S.moods[sel];else S.moods[sel]=d.m;save();render()};
 document.addEventListener('keydown',e=>{if(e.target.id==='gi'&&e.key==='Enter')A.gadd()});
 
-/* weather.js: 선택한 날짜의 날씨(Open-Meteo, 무료·키 없음, 계룡시 기준). 외부 접속이 막힌 환경(미리보기)에서는 '연동 예정'으로 표시 */
+/* weather.js: 선택한 날짜의 날씨 */
 const WX={lat:36.274,lon:127.249,data:{},state:'idle'};
 const WIC=c=>c===0?'☀️':c<=2?'🌤️':c===3?'☁️':c<=48?'🌫️':c<=57?'🌦️':c<=67?'🌧️':c<=77?'🌨️':c<=82?'🌧️':c<=86?'🌨️':'⛈️';
 async function wxLoad(){if(WX.state!=='idle')return;WX.state='load';try{const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WX.lat}&longitude=${WX.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&past_days=7&forecast_days=14`);const j=await r.json();j.daily.time.forEach((d,i)=>WX.data[d]={c:j.daily.weathercode[i],hi:Math.round(j.daily.temperature_2m_max[i]),lo:Math.round(j.daily.temperature_2m_min[i])});WX.state='ok'}catch(e){WX.state='fail'}if(!T&&!R)render()}
 function wxS(k){const w=WX.data[k];return w?`${WIC(w.c)} ${w.hi}°/${w.lo}°`:WX.state==='fail'?'날씨 연동 예정':''}
 const wxT=k=>wxS(k)?' · '+wxS(k):'';
 
-
-/* repeat.js: 반복 틀(내용·시간·요일마다/며칠마다·시작일) 저장·수정·삭제, 일정 화면 아래 '반복 일정' 표시 */
+/* repeat.js: 반복 일정 */
 let R=null;
 const rerr=m=>{R.msg=m;const e=$('r-m');if(e){e.textContent=m;e.style.color='var(--rd)';e.scrollIntoView({block:'center'})}toast(m)};
 const rdays=r=>r.kind==='every'?r.every+'일마다':(r.days.length===7?'매일':r.days.map(i=>WD[i]).join('·'));
@@ -253,8 +256,7 @@ A.tpl=d=>{const r=S.reps.find(x=>x.id===d.id);T.title=r.title;T.time=r.time;T.de
 SH.addEventListener('change',e=>{if(!R||e.target.id!=='r-x')return;const v=e.target.value.trim(),p=v?parseTime(v):null;if(!v||p){R.time=p;$('r-m').textContent=''}else $('r-m').textContent='시간을 이해하지 못했어요. 예: 7:30, 오후 7시 30분'});
 SH.addEventListener('input',e=>{if(!R)return;const i=e.target.id;if(i==='r-t')R.title=e.target.value;if(i==='r-d')R.detail=e.target.value;if(i==='r-n')R.every=Math.floor(+e.target.value);if(i==='r-s')R.start=e.target.value});
 
-
-/* record.js: 기록 탭 - 잠금(비밀번호), 일정(제목만, 누르면 자세히), 일기(제목·본문·사진) */
+/* record.js: 기록 탭 */
 let U=false,OPEN=new Set();
 const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('dg'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function lockHTML(){const has=!!S.cfg.pw;return `<div class="hd"><h1>기록</h1></div><div class="lk"><p class="mu">${has?'비밀번호를 입력하면 열려요.':'처음이에요. 비밀번호를 정해 주세요. 일기는 기본적으로 잠겨요.'}</p><input id="pw" class="in" type="password" placeholder="비밀번호" autocomplete="off" aria-label="비밀번호">${has?'':'<input id="pw2" class="in" type="password" placeholder="한 번 더" autocomplete="off" aria-label="비밀번호 확인">'}<p class="mu" id="pwm" style="margin:0 0 8px"></p><button class="ch on" data-a="unlock">${has?'열기':'정하고 열기'}</button></div><div id="ls"></div>`}
@@ -278,50 +280,361 @@ A.phd=d=>{phArr().splice(+d.n,1);save();render()};
 document.addEventListener('keydown',e=>{if(e.target.id==='pw'&&e.key==='Enter'&&S.cfg.pw)A.unlock()});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.dt){dayRec().title=t.value;save();return}if(!t.classList.contains('rt'))return;if(t.dataset.day){dayRec().text=t.value;save()}else updItem(t.dataset.id,{detail:t.value})});
 
-
-/* settings.js: 설정 탭 - 이름, 배경/글자색(RGB 팔레트), 그라데이션, 글자 크기, 글꼴 파일, 시간 표기, 잠금 */
+/* settings.js: 설정 탭 (실시간 미리보기 & 최종 저장 방식) */
 const D0=[250,248,244],DEF={bg:D0,bg2:[236,232,224],tx:[43,42,39]};
 const PAL=['#ffffff','#faf8f4','#f1ece3','#e8e4dc','#cfcac0','#8a857c','#4a4640','#2b2a27','#111111','#fde2e4','#fad2e1','#e2ece9','#bee1e6','#dfe7fd','#cddafd','#fff1e6','#fdf2b3','#e9f5db','#cfe1b9','#b7d3a8','#9fc5a0','#f4a6a6','#e57373','#d9534f','#f6b26b','#e0944a','#f1c232','#76a5af','#6fa8dc','#4a7bd0','#8e7cc3','#c27ba0'];
+const GRAD_PRESETS=[
+  {name:'🌿 아이콘 시그니처',bg:[242,250,244],bg2:[222,240,253],tx:[38,48,46]},
+  {name:'온화한 베이지',bg:[250,248,244],bg2:[236,230,218],tx:[43,42,39]},
+  {name:'노을빛 코랄',bg:[254,242,238],bg2:[253,226,218],tx:[58,40,36]},
+  {name:'새벽 소프트블루',bg:[242,246,252],bg2:[220,233,248],tx:[35,46,58]},
+  {name:'라벤더 미스트',bg:[247,243,250],bg2:[232,222,244],tx:[48,38,56]},
+  {name:'모던 미드나잇',bg:[28,30,34],bg2:[18,20,24],tx:[240,242,245]}
+];
+
+let TEMP_CFG=null;
+function getActiveCfg(){return TEMP_CFG||S.cfg}
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-function setColor(k,c,box){cdGet()[k]=c;box=box||document.querySelector(`.cp[data-k="${k}"]`);box.querySelectorAll('[data-i]').forEach(x=>{if(x!==document.activeElement)x.value=c[+x.dataset.i]});box.querySelector('.sw').style.background='rgb('+c+')';box.querySelector('.hx').textContent=hex(c);const pk=box.querySelector('.pk');if(pk)pk.value=hex(c);pvUpdate()}
 const hex=c=>'#'+c.map(n=>pad(n.toString(16))).join('');
 const idb=(m,k,v)=>new Promise(ok=>{try{const q=indexedDB.open('diary-fs',1);q.onupgradeneeded=()=>q.result.createObjectStore('f');q.onsuccess=()=>{const s=q.result.transaction('f',m==='get'?'readonly':'readwrite').objectStore('f'),r=m==='get'?s.get(k):s.put(v,k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)};q.onerror=()=>ok(null)}catch(e){ok(null)}});
+
 async function useFont(buf){try{const f=new FontFace('UserFont',buf);await f.load();document.fonts.add(f);document.body.style.fontFamily="'UserFont','Noto Sans KR',system-ui,sans-serif"}catch(e){toast('글꼴을 읽지 못했어요')}}
-function applyCfg(){const c=S.cfg,r=document.documentElement.style,g=a=>a?'rgb('+a+')':'';r.setProperty('--bg',g(c.bg));r.setProperty('--tx',g(c.tx));
-document.body.style.background=c.grad&&c.bg2?`linear-gradient(160deg,${g(c.bg||D0)},${g(c.bg2)}) fixed`:'';document.getElementById('app').style.zoom=(c.fs||15)/15}
-function rgbRow(k,label){const c=cdGet()[k]||DEF[k];return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${cdGet()[k]?hex(c):'기본색 (움직이면 바뀌어요)'}</p></div>`}
-function setHTML(){const c=S.cfg,d=cdGet(),has=!!c.pw;return `<div class="hd"><h1>설정</h1></div><div id="ls">${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(c.name||'')}" aria-label="이름">
-<p class="mu st">화면</p><p class="mu" style="margin:0">화면 비율은 기기에 맞게 자동으로 맞춰져요.</p>${rgbRow('bg','배경색')}<div class="rw" style="margin:8px 0"><button class="ch${d.grad?' on':''}" data-a="grad">그라데이션 ${d.grad?'켜짐':'꺼짐'}</button></div>${d.grad?rgbRow('bg2','그라데이션 끝색'):''}${rgbRow('tx','글자색')}
-<p class="mu st">글자 크기 <span id="fsv">${d.fs}px</span></p><input id="fs" type="range" min="12" max="22" value="${d.fs}" style="width:100%" aria-label="글자 크기"><div id="pv" class="pv" style="${pvCss()}">가나다라 미리보기 ABC 123</div><div class="rw" style="margin:10px 0"><button class="ch on" data-a="cfgsave">저장해서 적용</button><button class="ch" data-a="cfgcancel">되돌리기</button><button class="ch" data-a="cfgreset">기본값</button></div><p class="mu">저장을 눌러야 화면에 적용돼요.</p>
-<p class="mu st">글꼴</p><p class="mu" style="margin:0 0 6px">${esc(c.fontName||'기본 글꼴')}</p><div class="rw"><button class="ch" data-a="fontp">글꼴 파일 첨부</button><button class="ch" data-a="fontx">기본으로</button></div><p class="mu">ttf, otf, woff 파일을 쓸 수 있어요.</p>
+
+function applyCfg(customCfg){
+  const c=customCfg||getActiveCfg(),r=document.documentElement.style,g=a=>a?'rgb('+a+')':'';
+  r.setProperty('--bg',g(c.bg));
+  r.setProperty('--tx',g(c.tx));
+  document.body.style.background=c.grad&&c.bg2?`linear-gradient(160deg,${g(c.bg||D0)},${g(c.bg2)}) fixed`:g(c.bg||D0);
+  document.getElementById('app').style.zoom=(c.fs||15)/15;
+}
+
+function updateColorPreview(k,c,box){
+  if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  TEMP_CFG[k]=c;
+  applyCfg(TEMP_CFG);
+  box=box||document.querySelector(`.cp[data-k="${k}"]`);
+  if(box){
+    box.querySelectorAll('[data-i]').forEach(x=>{if(x!==document.activeElement)x.value=c[+x.dataset.i]});
+    box.querySelector('.sw').style.background='rgb('+c+')';
+    box.querySelector('.hx').textContent=hex(c);
+    const pk=box.querySelector('.pk');if(pk)pk.value=hex(c);
+  }
+  const sv=document.getElementById('color-save-status');
+  if(sv)sv.textContent='🎨 미리보기 중 (저장해야 영구 적용돼요)';
+}
+
+function rgbRow(k,label){
+  const c=getActiveCfg()[k]||DEF[k];
+  return `<div class="cp" data-k="${k}"><p class="mu" style="margin:0">${label}</p><div class="sw" style="background:rgb(${c})"></div>${['R','G','B'].map((n,i)=>`<label class="mu">${n}<input type="range" class="rg" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n}"><input type="number" class="in rn" min="0" max="255" value="${c[i]}" data-k="${k}" data-i="${i}" aria-label="${label} ${n} 숫자"></label>`).join('')}<div class="pal">${PAL.map(h=>`<button class="pc" style="background:${h}" data-a="pcol" data-k="${k}" data-h="${h}" aria-label="색 ${h}"></button>`).join('')}</div><label class="mu">직접 고르기 <input type="color" class="pk" data-k="${k}" value="${hex(c)}" aria-label="${label} 색 선택"></label><p class="mu hx" style="margin:0">${hex(c)}</p></div>`;
+}
+
+function notiStatusText(){
+  if(!("Notification" in window))return '이 기기/브라우저는 시스템 알림을 지원하지 않아요.';
+  if(Notification.permission==='granted')return '✅ 알림 허용됨 (백그라운드에서도 울림)';
+  if(Notification.permission==='denied')return '❌ 알림 차단됨 (브라우저 주소창 설정에서 허용 필요)';
+  return '⚠️ 알림 권한 필요';
+}
+
+function setHTML(){
+  if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  const c=getActiveCfg(),has=!!S.cfg.pw;
+  const isModified=JSON.stringify(TEMP_CFG)!==JSON.stringify(S.cfg);
+  const curSound=S.cfg.alarmSound||'chime';
+  const hasCustomAudio=!!S.cfg.customAudioName;
+
+  return `<div class="hd"><h1>설정</h1></div><div id="ls">
+<div style="display:flex;align-items:center;gap:14px;margin:12px 0 16px;padding:12px 16px;border-radius:18px;background:var(--sf);border:1px solid var(--bd)">
+  <img src="icon-192.png" alt="앱 아이콘" style="width:48px;height:48px;border-radius:12px;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.06))">
+  <div>
+    <b style="font-size:16px;display:block">나만의 일기장</b>
+    <span class="mu" style="font-size:12px">모바일 맞춤형 다이어리</span>
+  </div>
+</div>
+${accHTML()}<p class="mu st">기본 정보</p><input id="sn" class="in" placeholder="이름 (선택)" value="${esc(S.cfg.name||'')}" aria-label="이름">
+<p class="mu st">화면 색상 & 그라데이션</p>
+<p class="mu" style="margin:0 0 6px">버튼을 누르면 바로 화면에 미리보기로 보이고, 아래 <b>[색상 저장]</b>을 누르면 최종 적용돼요.</p>
+<p class="mu" style="font-size:12px;margin:4px 0 2px">추천 그라데이션 테마</p>
+<div class="presets">${GRAD_PRESETS.map((p,idx)=>`<button class="pbtn" data-a="preset" data-i="${idx}"><span class="pdot" style="background:linear-gradient(135deg,rgb(${p.bg}),rgb(${p.bg2}))"></span><span>${p.name}</span></button>`).join('')}</div>
+${rgbRow('bg','배경색')}
+<div class="rw" style="margin:8px 0"><button class="ch${c.grad?' on':''}" data-a="grad">그라데이션 ${c.grad?'켜짐':'꺼짐'}</button><button class="ch" data-a="cfgreset">색상 기본값</button></div>
+${c.grad?rgbRow('bg2','그라데이션 끝색'):''}
+${rgbRow('tx','글자색')}
+
+<div class="save-bar">
+  <div style="flex:1"><span id="color-save-status" class="mu">${isModified?'🎨 미리보기 중 (저장해야 유지돼요)':'현재 색상이 적용된 상태예요'}</span></div>
+  <button class="ch" data-a="cfgcancel">되돌리기</button>
+  <button class="ch on" data-a="cfgsave">색상 저장</button>
+</div>
+
+<p class="mu st">알림 및 소리</p>
+<p class="mu" style="margin:0 0 6px">알림 권한: ${notiStatusText()}</p>
+<div class="rw" style="margin:6px 0"><button class="ch on" data-a="reqnoti">알림 권한 받기</button></div>
+
+<label class="mu" for="sel-snd" style="margin-top:10px;display:block">알람 소리 선택</label>
+<select id="sel-snd" class="in">
+  <option value="chime"${curSound==='chime'?' selected':''}>맑은 차임 (기본)</option>
+  <option value="beep"${curSound==='beep'?' selected':''}>디지털 시계 비프</option>
+  <option value="bell"${curSound==='bell'?' selected':''}>부드러운 종소리</option>
+  <option value="marimba"${curSound==='marimba'?' selected':''}>경쾌한 마림바</option>
+  <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
+</select>
+<div class="rw" style="margin:6px 0 10px">
+  <button class="ch" data-a="testsnd">소리 미리듣기 🔔</button>
+  <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
+  ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
+</div>
+<p class="mu">스마트폰이나 PC에 저장된 mp3, wav, m4a 음악 파일을 알람음으로 쓸 수 있어요.</p>
+
+<p class="mu st">글자 크기 <span id="fsv">${S.cfg.fs||15}px</span></p><input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
+<p class="mu st">글꼴</p><p class="mu" style="margin:0 0 6px">${esc(S.cfg.fontName||'기본 글꼴')}</p><div class="rw"><button class="ch" data-a="fontp">글꼴 파일 첨부</button><button class="ch" data-a="fontx">기본으로</button></div><p class="mu">ttf, otf, woff 파일을 쓸 수 있어요.</p>
 <p class="mu st">시간 표기</p><button class="ch on" data-a="fmt2">${S.fmt12?'오전·오후 표기':'24시간 표기'} (누르면 바뀌어요)</button>
-<p class="mu st">잠금</p><button class="ch${c.lock?' on':''}" data-a="lockt">일기 잠금 ${c.lock?'켜짐':'꺼짐'}</button><input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호" style="margin-top:8px"><input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button class="ch" data-a="chpw">비밀번호 ${has?'바꾸기':'정하기'}</button>
-<p class="mu st">준비 중</p><p class="mu" style="margin-bottom:24px">알람과 위젯은 안드로이드 앱으로 만드는 단계에서 붙여요.</p></div>`}
-A.pcol=d=>setColor(d.k,rgbOf(d.h));
-const pvCss=()=>{const d=cdGet(),g=a=>'rgb('+a+')';return `background:${d.grad&&d.bg2?`linear-gradient(160deg,${g(d.bg||D0)},${g(d.bg2)})`:g(d.bg||D0)};color:${g(d.tx||DEF.tx)};font-size:${d.fs}px`};
-function pvUpdate(){const e=$('pv');if(e)e.style.cssText=pvCss()}
-let CD=null;
-const cdGet=()=>CD||(CD={bg:S.cfg.bg?[...S.cfg.bg]:null,bg2:S.cfg.bg2?[...S.cfg.bg2]:null,tx:S.cfg.tx?[...S.cfg.tx]:null,grad:!!S.cfg.grad,fs:S.cfg.fs||15});
-A.grad=()=>{const d=cdGet();d.grad=!d.grad;if(d.grad&&!d.bg2)d.bg2=[...DEF.bg2];render()};
-A.cfgsave=()=>{const d=cdGet();['bg','bg2','tx'].forEach(k=>{if(d[k])S.cfg[k]=d[k];else delete S.cfg[k]});S.cfg.grad=d.grad;S.cfg.fs=d.fs;CD=null;save();applyCfg();toast('화면 설정을 적용했어요');render()};
-A.cfgcancel=()=>{CD=null;render()};
-A.cfgreset=()=>{CD={bg:null,bg2:null,tx:null,grad:false,fs:15};render()};
+<p class="mu st">잠금</p><button class="ch${S.cfg.lock?' on':''}" data-a="lockt">일기 잠금 ${S.cfg.lock?'켜짐':'꺼짐'}</button><input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호" style="margin-top:8px"><input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button class="ch" data-a="chpw">비밀번호 ${has?'바꾸기':'정하기'}</button></div>`;
+}
+
+A.preset=d=>{
+  const p=GRAD_PRESETS[+d.i];
+  if(!p)return;
+  if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  TEMP_CFG.bg=[...p.bg];
+  TEMP_CFG.bg2=[...p.bg2];
+  TEMP_CFG.tx=[...p.tx];
+  TEMP_CFG.grad=true;
+  applyCfg(TEMP_CFG);
+  render();
+  toast(`[${p.name}] 미리보기가 적용되었어요. 저장을 눌러주세요.`);
+};
+A.pcol=d=>updateColorPreview(d.k,rgbOf(d.h));
+A.grad=()=>{
+  if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  TEMP_CFG.grad=!TEMP_CFG.grad;
+  if(!TEMP_CFG.bg2)TEMP_CFG.bg2=[...DEF.bg2];
+  applyCfg(TEMP_CFG);
+  render();
+};
+A.cfgreset=()=>{
+  TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  delete TEMP_CFG.bg;
+  delete TEMP_CFG.bg2;
+  delete TEMP_CFG.tx;
+  TEMP_CFG.grad=false;
+  applyCfg(TEMP_CFG);
+  render();
+  toast('색상을 기본값으로 되돌렸어요. 저장을 눌러주세요.');
+};
+A.cfgsave=()=>{
+  if(TEMP_CFG){
+    S.cfg=Object.assign(S.cfg,TEMP_CFG);
+    TEMP_CFG=null;
+    save();
+    applyCfg();
+    render();
+    toast('화면 색상이 성공적으로 저장되었어요 ✨');
+  }
+};
+A.cfgcancel=()=>{
+  TEMP_CFG=null;
+  applyCfg();
+  render();
+  toast('원래 색상으로 되돌렸어요');
+};
+
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
+A.reqnoti=async()=>{if(!("Notification" in window)){toast('이 브라우저는 알림을 지원하지 않아요');return}const p=await Notification.requestPermission();render();toast(p==='granted'?'알림이 허용되었어요!':'알림 권한을 받지 못했어요')};
+A.testsnd=()=>{playAlarmSound(S.cfg.alarmSound||'chime');toast('알람 소리를 울렸어요 🔔')};
+
+/* 커스텀 음원 파일 업로드 및 삭제 */
+const AF=document.createElement('input');AF.type='file';AF.accept='audio/*';AF.hidden=true;document.body.appendChild(AF);
+AF.onchange=async()=>{
+  const f=AF.files[0];AF.value='';if(!f)return;
+  if(f.size>25*1024*1024){toast('25MB 이하의 음원 파일만 가능해요');return}
+  const buf=await f.arrayBuffer();
+  await idb('put','alarmSoundCustom',{buf,name:f.name});
+  S.cfg.customAudioName=f.name;
+  S.cfg.alarmSound='custom';
+  save();
+  render();
+  toast(`음원 [${f.name}]을 등록했어요!`);
+  playAlarmSound('custom');
+};
+A.audp=()=>AF.click();
+A.audx=async()=>{
+  await idb('put','alarmSoundCustom',null);
+  delete S.cfg.customAudioName;
+  S.cfg.alarmSound='chime';
+  save();
+  render();
+  toast('등록한 음원을 삭제했어요');
+};
+
 A.lockt=async()=>{if(S.cfg.lock&&S.cfg.pw&&await hash($('sp0').value)!==S.cfg.pw){toast('아래 현재 비밀번호 칸에 적고 눌러 주세요');return}S.cfg.lock=!S.cfg.lock;save();render()};
 A.chpw=async()=>{const n=$('sp1').value;if(S.cfg.pw&&await hash($('sp0').value)!==S.cfg.pw){toast('현재 비밀번호가 달라요');return}if(n.length<4){toast('새 비밀번호는 4자 이상이에요');return}S.cfg.pw=await hash(n);save();render();toast('비밀번호를 저장했어요')};
 const FF=document.createElement('input');FF.type='file';FF.accept='.ttf,.otf,.woff,.woff2';FF.hidden=true;document.body.appendChild(FF);
 FF.onchange=async()=>{const f=FF.files[0];FF.value='';if(!f)return;const b=await f.arrayBuffer();await idb('put','font',b);S.cfg.fontName=f.name;save();await useFont(b);render()};
 A.fontp=()=>FF.click();
 A.fontx=async()=>{await idb('put','font',null);S.cfg.fontName='';save();document.body.style.fontFamily='';render()};
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='sel-snd'){
+    S.cfg.alarmSound=e.target.value;
+    save();
+    playAlarmSound(e.target.value);
+  }
+});
+
 document.addEventListener('input',e=>{const t=e.target,k=t.dataset.k;
-if(k&&(t.classList.contains('rg')||t.classList.contains('rn'))){const i=+t.dataset.i,v=Math.max(0,Math.min(255,Math.round(+t.value||0))),c=[...(cdGet()[k]||DEF[k])];c[i]=v;setColor(k,c,t.closest('.cp'))}
-else if(k&&t.classList.contains('pk'))setColor(k,rgbOf(t.value),t.closest('.cp'))
-else if(t.id==='fs'){cdGet().fs=+t.value;$('fsv').textContent=t.value+'px';pvUpdate()}
+if(k&&(t.classList.contains('rg')||t.classList.contains('rn'))){
+  if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
+  const i=+t.dataset.i,v=Math.max(0,Math.min(255,Math.round(+t.value||0))),c=[...(TEMP_CFG[k]||DEF[k])];c[i]=v;
+  updateColorPreview(k,c,t.closest('.cp'));
+}
+else if(k&&t.classList.contains('pk'))updateColorPreview(k,rgbOf(t.value),t.closest('.cp'))
+else if(t.id==='fs'){S.cfg.fs=+t.value;save();applyCfg();$('fsv').textContent=t.value+'px'}
 else if(t.id==='sn'){S.cfg.name=t.value;save()}});
 idb('get','font').then(b=>{if(b)useFont(b)});
 
+/* alarm.js: 알람 소리(내장 4종 + 커스텀 음원), 감시 루프 */
+const ALARM_KEY='diary.alarms.fired';
+function getFiredAlarms(){try{return JSON.parse(localStorage.getItem(ALARM_KEY))||{}}catch(e){return {}}}
+function markAlarmFired(k){try{const f=getFiredAlarms();f[k]=Date.now();const old=Date.now()-7*864e5;for(const x in f){if(f[x]<old)delete f[x]}localStorage.setItem(ALARM_KEY,JSON.stringify(f))}catch(e){}}
 
-/* sync.js: Firebase 로그인(구글·이메일) + 월 단위 클라우드 동기화. 로컬 우선: 저장은 기기에 먼저, 로그인 중이면 뒤이어 올려요 */
+let curAudioNode=null;
+async function playAlarmSound(type){
+  type=type||S.cfg.alarmSound||'chime';
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+
+    // 1) 커스텀 음원 파일 재생
+    if(type==='custom'){
+      const custom=await idb('get','alarmSoundCustom');
+      if(custom&&custom.buf){
+        try{
+          const audioBuffer=await ctx.decodeAudioData(custom.buf.slice(0));
+          const src=ctx.createBufferSource();
+          src.buffer=audioBuffer;
+          src.connect(ctx.destination);
+          src.start(0);
+          curAudioNode=src;
+          return;
+        }catch(err){console.warn('커스텀 음원 디코딩 실패, 기본 사운드로 대체',err)}
+      }
+    }
+
+    // 2) 내장 사운드 (Web Audio API)
+    if(type==='beep'){ // 디지털 시계 비프
+      const beeps=[0, 0.15, 0.4, 0.55];
+      beeps.forEach(st=>{
+        const osc=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.type='square';
+        osc.frequency.setValueAtTime(1046.50,ctx.currentTime+st);
+        gain.gain.setValueAtTime(0.18,ctx.currentTime+st);
+        gain.gain.setValueAtTime(0,ctx.currentTime+st+0.08);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(ctx.currentTime+st);osc.stop(ctx.currentTime+st+0.09);
+      });
+    }else if(type==='bell'){ // 부드러운 종소리
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.setValueAtTime(880,ctx.currentTime);
+      gain.gain.setValueAtTime(0.35,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+1.8);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);osc.stop(ctx.currentTime+1.85);
+    }else if(type==='marimba'){ // 마림바 멜로디
+      const seq=[{f:440,t:0},{f:554.37,t:0.12},{f:659.25,t:0.24},{f:880,t:0.36}];
+      seq.forEach(n=>{
+        const osc=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.type='sine';
+        osc.frequency.setValueAtTime(n.f,ctx.currentTime+n.t);
+        gain.gain.setValueAtTime(0.3,ctx.currentTime+n.t);
+        gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+0.25);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+0.28);
+      });
+    }else{ // chime (기본: 맑은 차임)
+      const notes=[
+        {f:523.25,t:0.00,d:0.18},
+        {f:659.25,t:0.15,d:0.18},
+        {f:783.99,t:0.30,d:0.22},
+        {f:1046.50,t:0.48,d:0.38},
+        {f:783.99,t:0.85,d:0.18},
+        {f:1046.50,t:1.00,d:0.45}
+      ];
+      notes.forEach(n=>{
+        const osc=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.type='triangle';
+        osc.frequency.setValueAtTime(n.f,ctx.currentTime+n.t);
+        gain.gain.setValueAtTime(0.25,ctx.currentTime+n.t);
+        gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+n.t+n.d);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(ctx.currentTime+n.t);osc.stop(ctx.currentTime+n.t+n.d+0.05);
+      });
+    }
+  }catch(e){console.warn('알람 소리 재생 실패:',e)}
+}
+
+function showAlarmModal(title,sub,detail){
+  const exist=document.getElementById('alarm-dialog');
+  if(exist)exist.remove();
+  const div=document.createElement('div');
+  div.id='alarm-dialog';
+  div.className='ov';
+  div.style.zIndex='40';
+  div.innerHTML=`<div class="sh" style="padding:24px 20px;text-align:center">
+    <img src="icon-192.png" alt="알람 아이콘" style="width:64px;height:64px;border-radius:16px;margin:0 auto 10px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.12));">
+    <b style="font-size:18px;display:block;margin-bottom:4px">${esc(title)}</b>
+    <p class="mu" style="margin:4px 0 12px">${esc(sub)}</p>
+    ${detail?`<div style="background:var(--bg);border:1px solid var(--bd);padding:10px 14px;border-radius:12px;font-size:14px;margin:8px 0 16px;text-align:left;white-space:pre-wrap;">${esc(detail)}</div>`:''}
+    <button class="ch pr" style="width:100%;margin-top:10px" id="alarm-ok-btn">확인</button>
+  </div>`;
+  document.body.appendChild(div);
+  div.querySelector('#alarm-ok-btn').onclick=()=>{
+    div.remove();
+    if(curAudioNode){try{curAudioNode.stop()}catch(e){}}
+  };
+}
+
+function triggerAlarm(item){
+  playAlarmSound(S.cfg.alarmSound||'chime');
+  const offsetStr=item.alarm===0?'정시':item.alarm+'분 전';
+  const subText=`${item.date} ${fmtTime(item.time)} 일정 (${offsetStr})`;
+
+  if("Notification" in window && Notification.permission==='granted'){
+    try{
+      new Notification(`[다이어리 알람] ${item.title}`,{
+        body:subText+(item.detail?' · '+item.detail:''),
+        icon:'icon-192.png'
+      });
+    }catch(e){}
+  }
+  showAlarmModal(item.title,subText,item.detail);
+}
+
+function checkAlarms(){
+  const now=Date.now();
+  const fired=getFiredAlarms();
+
+  S.items.forEach(item=>{
+    if(!item.time || item.alarm===null || item.done) return;
+    const itemDateTime=new Date(`${item.date}T${item.time}:00`).getTime();
+    if(isNaN(itemDateTime)) return;
+
+    const triggerTime=itemDateTime - (item.alarm * 60 * 1000);
+    const key=`${item.id}_${triggerTime}`;
+
+    if(now >= triggerTime && now < (triggerTime + 300000) && !fired[key]){
+      markAlarmFired(key);
+      triggerAlarm(item);
+    }
+  });
+}
+
+/* sync.js: Firebase 로그인 & 클라우드 동기화 (스크롤 튐 방지 및 쿨다운 적용) */
 const FBC={apiKey:"AIzaSyCTjGJN87POXA6NPkLlyFRt7s2Fkfmrbq4",authDomain:"my-diary-449a0.firebaseapp.com",projectId:"my-diary-449a0",storageBucket:"my-diary-449a0.firebasestorage.app",messagingSenderId:"571869487303",appId:"1:571869487303:web:1ae31d5c2df9ca1be1dee2"};
 const SY={ready:false,user:null,st:'off',msg:'',busy:false,again:false,t:null,meta:{last:{},u:{},ph:{}}};
 const SYMSG={ok:'동기화됨',push:'올리는 중…',pull:'불러오는 중…',err:'동기화 오류',off:''};
@@ -332,14 +645,25 @@ function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0,c;i<s.length;i++){c=s.
 const pid=d=>'p'+h53(d).toString(36);
 const syBase=()=>SY.db.collection('users').doc(SY.user.uid);
 const syScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
-async function syInit(){try{const b='https://www.gstatic.com/firebasejs/10.12.2/';await syScript(b+'firebase-app-compat.js');await syScript(b+'firebase-auth-compat.js');await syScript(b+'firebase-firestore-compat.js');firebase.initializeApp(FBC);SY.auth=firebase.auth();SY.db=firebase.firestore();SY.ready=true;SY.auth.onAuthStateChanged(syAuthChanged)}catch(e){SY.st='nosdk'}if(tab==='설정'&&!T&&!R)render()}
-const syUi=()=>{const e=document.getElementById('sy-st');if(e)e.textContent=[SYMSG[SY.st],SY.msg].filter(Boolean).join(' · ')};
-function syKick(){if(!SY.user)return;if(SY.busy){SY.again=true;return}clearTimeout(SY.t);SY.t=setTimeout(syCycle,1500)}
+async function syInit(){try{const b='https://www.gstatic.com/firebasejs/10.12.2/';await syScript(b+'firebase-app-compat.js');await syScript(b+'firebase-auth-compat.js');await syScript(b+'firebase-firestore-compat.js');firebase.initializeApp(FBC);SY.auth=firebase.auth();SY.db=firebase.firestore();SY.ready=true;SY.auth.onAuthStateChanged(syAuthChanged)}catch(e){SY.st='nosdk'}syUi()}
+
+// 설정 탭에서 상태 텍스트만 업데이트하여 전체 리렌더링으로 인한 화면 튐 방지
+const syUi=()=>{
+  const el=document.getElementById('sy-status-text');
+  if(el){
+    el.textContent=(SYMSG[SY.st]||'')+(SY.msg?' · '+SY.msg:'');
+  }else if(tab==='설정'&&!T&&!R){
+    render();
+  }
+};
+
+// 동기화 주기를 3.5초로 완화하여 잦은 깜빡임 완화
+function syKick(){if(!SY.user)return;if(SY.busy){SY.again=true;return}clearTimeout(SY.t);SY.t=setTimeout(syCycle,3500)}
 const syCycle=async()=>{await syPull();await syPush()};
 const syMetaKey=()=>'diary.sync.'+SY.user.uid;
 function syMetaLoad(){let m=null;try{m=JSON.parse(localStorage.getItem(syMetaKey()))}catch(e){}SY.meta=Object.assign({last:{},u:{},ph:{}},m)}
 function syMetaSave(){try{localStorage.setItem(syMetaKey(),JSON.stringify(SY.meta))}catch(e){}}
-/* ---- 내 데이터를 월별 문서로 쪼개기 ---- */
+
 function splitS(){const photos={},months={},ym=d=>String(d).slice(0,7);
 const get=k=>months[k]||(months[k]={items:[],diary:{},moods:{},goals:[],rdone:{},skip:{}});
 S.items.forEach(i=>{const{photos:_,...r}=i;get(ym(i.date)).items.push(r)});
@@ -351,7 +675,7 @@ return{meta:clone({reps:S.reps,cfg:S.cfg,fmt12:S.fmt12}),months:clone(months),ph
 const emptyDoc=r=>!(r.items||[]).length&&!Object.keys(r.diary||{}).length&&!Object.keys(r.moods||{}).length&&!(r.goals||[]).length&&!Object.keys(r.rdone||{}).length&&!Object.keys(r.skip||{}).length;
 const mstrip=r=>{const{u,...x}=r;return clone(x)};
 const emptyLocal=()=>!S.items.length&&!S.reps.length&&!Object.keys(S.diary).length&&!Object.keys(S.goalsM).length&&!Object.keys(S.moods).length;
-/* ---- 올리기 ---- */
+
 async function syPush(){if(!SY.user||SY.busy)return;SY.busy=true;SY.st='push';syUi();let merged=false;
 try{const base=syBase(),M=SY.meta,{meta,photos}=splitS();let months=splitS().months;const t=Date.now();
 for(const[id,data]of Object.entries(photos))if(!M.ph[id]){await base.collection('photos').doc(id).set({data,t});M.ph[id]=1}
@@ -364,7 +688,7 @@ const mj=jst(meta);if(M.last._meta!==mj){await base.collection('meta').doc('main
 syMetaSave();SY.st='ok';SY.msg=''}catch(e){SY.st='err';SY.msg=e.code||e.message}
 if(merged){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!T&&!R)render()}
 SY.busy=false;syUi();if(SY.again){SY.again=false;syKick()}}
-/* ---- 불러오기 ---- */
+
 async function applyMonth(ym,r,pho,union){const inM=k=>String(k).startsWith(ym),rd=r.diary||{};
 const need=new Set();Object.values(rd).forEach(e=>(e.photos||[]).forEach(id=>{if(!pho[id])need.add(id)}));
 for(const id of need){const p=await syBase().collection('photos').doc(id).get();if(p.exists)pho[id]=p.data().data}
@@ -374,6 +698,7 @@ for(const[d,e]of Object.entries(rd)){const ph=(e.photos||[]).map(id=>pho[id]).fi
 if(!union||!S.diary[d])S.diary[d]={title:e.title||'',text:e.text||'',photos:ph};
 else{const l=S.diary[d];if(!l.text)l.text=e.text||'';if(!l.title)l.title=e.title||'';l.photos=l.photos||[];const have=new Set(l.photos.map(pid));ph.forEach(p=>{if(!have.has(pid(p)))l.photos.push(p)})}}
 Object.entries(r.moods||{}).forEach(([d,m])=>{if(!union||!S.moods[d])S.moods[d]=m})}
+
 async function syPull(){if(!SY.user||SY.busy)return;SY.busy=true;SY.st='pull';syUi();let changed=false;
 try{const base=syBase(),M=SY.meta,[ms,mt]=await Promise.all([base.collection('months').get(),base.collection('meta').doc('main').get()]);
 const local=splitS().months,pho={},wasEmpty=emptyLocal();Object.values(S.diary).forEach(e=>(e.photos||[]).forEach(p=>{pho[pid(p)]=p}));
@@ -382,13 +707,15 @@ const lj=local[ym]?jst(local[ym]):null,was=M.last[ym],remoteNew=(r.u||0)>(M.u[ym
 if(was!==undefined&&!remoteNew)continue;
 await applyMonth(ym,r,pho,was===undefined?!!local[ym]:lj!==was);changed=true;
 M.last[ym]=jst(mstrip(r));M.u[ym]=r.u||0}
-if(mt.exists){const rm=mt.data(),cur=jst(splitS().meta),was=M.last._meta,remoteNew=(rm.u||0)>(M.u._meta||0);
-const takeMeta=()=>{S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12},unionReps=()=>{const ri=new Set(S.reps.map(x=>x.id));(rm.reps||[]).forEach(x=>{if(!ri.has(x.id))S.reps.push(x)})};
-if(was===undefined||remoteNew){if(was===undefined?wasEmpty:cur===was)takeMeta();else unionReps();changed=true;M.last._meta=jst(mstrip(rm));M.u._meta=rm.u||0}}
+if(mt.exists){const rm=mt.data(),cur=jst(splitS().meta),was=M.last._meta;
+if(was!==undefined&&cur===was){if((rm.u||0)>(M.u._meta||0)){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}}
+else if(wasEmpty){S.reps=rm.reps||[];S.cfg=Object.assign({lock:true},rm.cfg);S.fmt12=!!rm.fmt12;changed=true}
+else{const ri=new Set(S.reps.map(x=>x.id));(rm.reps||[]).forEach(x=>{if(!ri.has(x.id))S.reps.push(x)});changed=true}
+M.last._meta=jst(mstrip(rm));M.u._meta=rm.u||0}
 if(changed){SY.busy=false;save();SY.busy=true;applyCfg()}
 syMetaSave();SY.st='ok';SY.msg=''}catch(e){SY.st='err';SY.msg=e.code||e.message}
 SY.busy=false;syUi();if(changed&&!T&&!R)render()}
-/* ---- 로그인 상태 ---- */
+
 async function syAuthChanged(u){SY.user=u;SY.msg='';
 if(u){let o=null;try{o=localStorage.getItem('diary.owner')}catch(e){}
 if(o&&o!==u.uid){if(!confirm('이 기기에는 다른 계정의 데이터가 있어요. 새 계정으로 바꾸면 이 기기의 기존 데이터를 지우고 새 계정 데이터를 불러와요. 계속할까요?')){SY.user=null;await SY.auth.signOut();return}
@@ -399,25 +726,60 @@ if(!T&&!R)render()}
 function syErr(e){SY.msg=SYERR[e.code]||e.message||'오류가 났어요.';toast(SY.msg);syUi()}
 function accHTML(){const u=SY.user,h='<p class="mu st">계정 · 동기화</p>';
 if(!SY.ready)return h+`<p class="mu">${SY.st==='nosdk'?'로그인 모듈을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.':'준비 중…'}</p>`;
-if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" id="sy-st" style="margin:0 0 8px">${esc([SYMSG[SY.st],SY.msg].filter(Boolean).join(' · '))}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
-return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" id="sy-st" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
+if(u)return h+`<p style="margin:0 0 6px">${esc(u.email||'')}</p><p class="mu" style="margin:0 0 8px" id="sy-status-text">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</p><div class="rw"><button class="ch on" data-a="sysync">지금 동기화</button><button class="ch" data-a="syout">로그아웃</button></div>`;
+return h+`<button class="ch on" data-a="sygoogle" style="width:100%">Google로 로그인</button><p class="mu" style="margin:8px 0 4px">또는 이메일로</p><input id="sy-e" class="in" type="email" placeholder="이메일" autocomplete="email" aria-label="이메일"><input id="sy-p" class="in" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" aria-label="비밀번호" style="margin-top:6px"><p class="mu" style="margin:6px 0">${esc(SY.msg||'')}</p><div class="rw"><button class="ch on" data-a="syin">로그인</button><button class="ch" data-a="syup">가입</button></div>`}
 A.sygoogle=async()=>{const p=new firebase.auth.GoogleAuthProvider();try{await SY.auth.signInWithPopup(p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code)){SY.auth.signInWithRedirect(p);return}syErr(e)}};
 const syMail=async f=>{const e=$('sy-e').value.trim(),p=$('sy-p').value;if(!e||!p){syErr({message:'이메일과 비밀번호를 적어 주세요.'});return}try{await SY.auth[f](e,p)}catch(x){syErr(x)}};
 A.syin=()=>syMail('signInWithEmailAndPassword');
 A.syup=()=>syMail('createUserWithEmailAndPassword');
 A.syout=async()=>{await SY.auth.signOut()};
 A.sysync=async()=>{await syPull();await syPush()};
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SY.user)syPull().then(syPush)});
 
+// 모바일 화면 전환 쿨다운 (최소 60초 간격)
+let lastVisSync=0;
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&SY.user&&(Date.now()-lastVisSync>60000)){
+    lastVisSync=Date.now();
+    syPull().then(syPush);
+  }
+});
 
-/* app.js: 하단 메뉴, 화면 그리기, 시작 */
+/* app.js: 하단 메뉴, 화면 그리기 (스크롤 위치 자동 복원) */
 const TABS=['일정','달력','기록','설정'],NEXT={'달력':'한 달 달력은 2단계에서 만들어요.','기록':'기록 화면은 3단계에서 만들어요.','설정':'설정 화면은 5단계에서 만들어요.'};let tab='일정';
 const app=document.getElementById('app');
 function toast(m,label,fn){const t=document.getElementById('toast');t.textContent=m;if(label){const b=document.createElement('button');b.textContent=label;b.className='tu';b.onclick=()=>{fn();t.className=''};t.appendChild(b)}t.className=label?'on act':'on';clearTimeout(toast.h);toast.h=setTimeout(()=>{t.className=''},label?5000:2200)}
 function tabsHTML(){return `<nav class="tb" aria-label="메뉴">${TABS.map(t=>`<button class="${t===tab?'a':''}" data-a="tab" data-t="${t}">${t}</button>`).join('')}</nav>`}
-function render(){const _o=document.getElementById('ls'),_s=_o&&window._lt===tab?_o.scrollTop:0;app.innerHTML=(tab==='일정'?headHTML()+weekHTML()+`<div id="ls">${itemsListHTML()}</div>${repListHTML()}`+barHTML():tab==='달력'?calHTML():tab==='기록'?recHTML():tab==='설정'?setHTML():`<div class="hd"><h1>${tab}</h1></div><p class="mu" style="margin-top:24px">${NEXT[tab]}</p><div id="ls"></div>`)+tabsHTML();window._lt=tab;const _n=document.getElementById('ls');if(_n&&_s)_n.scrollTop=_s;if(tab==='달력'&&DY&&!T&&!R)drawDay()}
+
+function render(){
+  // 리렌더링 전 스크롤 위치 기억
+  const ls=document.getElementById('ls');
+  const lsTop=ls?ls.scrollTop:0;
+  const winTop=window.scrollY||document.documentElement.scrollTop;
+
+  app.innerHTML=(tab==='일정'?headHTML()+weekHTML()+`<div id="ls">${itemsListHTML()}</div>${repListHTML()}`+barHTML():tab==='달력'?calHTML():tab==='기록'?recHTML():tab==='설정'?setHTML():`<div class="hd"><h1>${tab}</h1></div><p class="mu" style="margin-top:24px">${NEXT[tab]}</p><div id="ls"></div>`)+tabsHTML();
+  if(tab==='달력'&&DY&&!T&&!R)drawDay();
+
+  // 리렌더링 후 스크롤 위치 즉시 복원 (화면 튐 방지)
+  requestAnimationFrame(()=>{
+    const newLs=document.getElementById('ls');
+    if(newLs&&lsTop)newLs.scrollTop=lsTop;
+    if(winTop)window.scrollTo(0,winTop);
+  });
+}
+
 app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
-A.tab=d=>{DY=false;CD=null;if(tab==='기록'&&d.t!=='기록')U=false;tab=d.t;if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};render()};
+A.tab=d=>{
+  DY=false;
+  if(tab==='기록'&&d.t!=='기록')U=false;
+  if(tab==='설정'&&d.t!=='설정'&&TEMP_CFG){TEMP_CFG=null;applyCfg()}
+  tab=d.t;
+  if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};
+  render();
+};
+
+// 시작
 load();migGoals();applyCfg();render();wxLoad();syInit();
+setInterval(checkAlarms, 3000);
+setTimeout(checkAlarms, 500);
 
 </script></body></html>
