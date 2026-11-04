@@ -93,9 +93,9 @@ textarea{font:inherit}
 </style></head><body><div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div><script>
 /* data.js: 항목 저장 구조 */
 const KEY='diary.v1',A={};
-let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true,alarmSound:'chime',alarmVol:80}},DR={title:'',time:null,alarm:null};
+let S={items:[],fmt12:false,goals:[],goalsM:{},moods:{},reps:[],skip:{},rdone:{},diary:{},cfg:{lock:true,alarmSound:'chime',alarmVol:80,bgKeepAlive:true}},DR={title:'',time:null,alarm:null};
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick();syncScheduledNotifications()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('저장 공간이 부족해요')}syKick();syncScheduledNotifications();updateBgKeepAlive()}
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -425,6 +425,14 @@ function setHTML(){
     <button class="ch on" data-a="reqnoti">권한 받기</button>
   </div>
 
+  <div class="set-row">
+    <div>
+      <div style="font-size:14px">화면 꺼짐 시 알람 유지 (백그라운드)</div>
+      <div class="mu" style="font-size:12px">${S.cfg.bgKeepAlive!==false?'켜짐 (화면 꺼짐 시 절전 차단 및 정시 알람)':'꺼짐 (화면 꺼지면 알람 안 옴)'}</div>
+    </div>
+    <button class="ch${S.cfg.bgKeepAlive!==false?' on':''}" data-a="bgaktog">${S.cfg.bgKeepAlive!==false?'켜짐':'꺼짐'}</button>
+  </div>
+
   <div class="set-col">
     <label class="mu" for="sel-snd" style="display:block;margin-bottom:6px">알람 소리 선택</label>
     <select id="sel-snd" class="in" style="margin:0 0 8px">
@@ -600,6 +608,13 @@ A.cfgcancel=()=>{
 
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
 A.reqnoti=async()=>{if(!("Notification" in window)){toast('이 브라우저는 알림을 지원하지 않아요');return}const p=await Notification.requestPermission();render();toast(p==='granted'?'알림이 허용되었어요!':'알림 권한을 받지 못했어요')};
+A.bgaktog=()=>{
+  S.cfg.bgKeepAlive = S.cfg.bgKeepAlive === false ? true : false;
+  save();
+  updateBgKeepAlive();
+  render();
+  toast(S.cfg.bgKeepAlive ? '화면 꺼짐 알람 유지가 켜졌어요 🔋' : '화면 꺼짐 알람 유지가 꺼졌어요');
+};
 A.almtog=()=>{ALARM_GUIDE_OPEN=!ALARM_GUIDE_OPEN;render()};
 A.testsnd=()=>{
   if(isPreviewPlaying){
@@ -638,6 +653,11 @@ A.testbg=async()=>{
     if(p!=='granted'){toast('알림 권한을 먼저 허용해 주세요');return}
   }
   toast('5초 뒤 알람이 울려요! 지금 바로 화면을 끄거나 홈 화면으로 나가보세요.');
+  
+  // 백그라운드 무음 오디오를 즉시 활성화하여 화면이 꺼져도 브라우저가 잠들지 않도록 방지
+  initBgAudio();
+  if(bgAudio){bgAudio.play().catch(()=>{})}
+
   const targetTime=Date.now()+5000;
   if(('showTrigger' in Notification.prototype)&&('TimestampTrigger' in window)&&window.SW_REG){
     try{
@@ -654,6 +674,7 @@ A.testbg=async()=>{
     }catch(e){}
   }
   setTimeout(()=>{
+    if(bgAudio){try{bgAudio.pause()}catch(e){}}
     const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
     playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v);
     const notiOpts={
@@ -745,6 +766,62 @@ idb('get','font').then(b=>{if(b)useFont(b)});
 const ALARM_KEY='diary.alarms.fired';
 function getFiredAlarms(){try{return JSON.parse(localStorage.getItem(ALARM_KEY))||{}}catch(e){return {}}}
 function markAlarmFired(k){try{const f=getFiredAlarms();f[k]=Date.now();const old=Date.now()-7*864e5;for(const x in f){if(f[x]<old)delete f[x]}localStorage.setItem(ALARM_KEY,JSON.stringify(f))}catch(e){}}
+
+/* 백그라운드 절전 방지 무음 오디오 (Keep-Alive) */
+const SILENT_WAV='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+let bgAudio=null, bgAudioPrimed=false;
+function initBgAudio(){
+  if(!bgAudio){
+    bgAudio=new Audio(SILENT_WAV);
+    bgAudio.loop=true;
+    bgAudio.volume=0.01;
+  }
+}
+function primeBgAudio(){
+  if(bgAudioPrimed)return;
+  initBgAudio();
+  bgAudio.play().then(()=>{
+    bgAudio.pause();
+    bgAudioPrimed=true;
+  }).catch(()=>{});
+}
+document.addEventListener('touchstart',primeBgAudio,{passive:true});
+document.addEventListener('click',primeBgAudio,{passive:true});
+
+function hasPendingAlarms(){
+  const now=Date.now(), oneDayLater=now+24*3600*1000, fired=getFiredAlarms(), td=ymd(new Date());
+  const hasItem=(S.items||[]).some(item=>{
+    if(!item.time||item.alarm===null||item.done)return false;
+    const itemDateTime=new Date(`${item.date}T${item.time}:00`).getTime();
+    if(isNaN(itemDateTime))return false;
+    const triggerTime=itemDateTime-(item.alarm*60*1000);
+    return triggerTime>(now-60000)&&triggerTime<oneDayLater&&!fired[`${item.id}_${triggerTime}`];
+  });
+  if(hasItem)return true;
+
+  const hasRep=(S.reps||[]).some(r=>{
+    if(!r.time||r.alarm===null||r.alarm===undefined)return false;
+    if(!repOn(r,td))return false;
+    if(S.rdone&&S.rdone[td+'|'+r.id])return false;
+    if(S.skip&&S.skip[td+'|'+r.id])return false;
+    const repDateTime=new Date(`${td}T${r.time}:00`).getTime();
+    if(isNaN(repDateTime))return false;
+    const triggerTime=repDateTime-(r.alarm*60*1000);
+    return triggerTime>(now-60000)&&triggerTime<oneDayLater&&!fired[`rep_${r.id}_${td}_${triggerTime}`];
+  });
+  return hasRep;
+}
+
+function updateBgKeepAlive(){
+  const enabled=S.cfg.bgKeepAlive!==false;
+  const pending=hasPendingAlarms();
+  if(document.hidden&&enabled&&pending){
+    initBgAudio();
+    bgAudio.play().catch(()=>{});
+  }else{
+    if(bgAudio){try{bgAudio.pause()}catch(e){}}
+  }
+}
 
 let activeAudioCtx=null, activeMasterGain=null, activeSourceNodes=[], curAudioNode=null, isPreviewPlaying=false;
 
@@ -951,6 +1028,7 @@ function checkAlarms(){
     if(now >= triggerTime && now < (triggerTime + 300000) && !fired[key]){
       markAlarmFired(key);
       triggerAlarm(item, false);
+      updateBgKeepAlive();
     }
   });
 
@@ -971,6 +1049,7 @@ function checkAlarms(){
     if(now >= triggerTime && now < (triggerTime + 300000) && !fired[key]){
       markAlarmFired(key);
       triggerAlarm({date:td,title:r.title,time:r.time,alarm:r.alarm,detail:r.detail}, true);
+      updateBgKeepAlive();
     }
   });
 }
@@ -1225,6 +1304,9 @@ document.addEventListener('visibilitychange', ()=>{
   if(!document.hidden){
     checkAlarms();
     syncScheduledNotifications();
+    updateBgKeepAlive();
+  }else{
+    updateBgKeepAlive();
   }
 });
 
