@@ -1,6 +1,6 @@
 {
-  "name": "나만의 일기장",
-  "short_name": "일기장",
+  "name": "나만의 다이어리",
+  "short_name": "다이어리",
   "description": "감성적인 일정과 일기, 알람 다이어리",
   "start_url": "./index.html",
   "display": "standalone",
