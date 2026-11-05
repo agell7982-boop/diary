@@ -187,13 +187,24 @@ function setHTML(){
 
     ${ALARM_GUIDE_OPEN ? `
       <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6">
-        <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" style="display:block;text-align:center;text-decoration:none;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin:4px 0 6px;">📥 안드로이드 전용 알람 앱(APK) 다운로드</a>
-        <p class="mu" style="font-size:11px;margin:0 0 12px;text-align:center">앱이 완전히 꺼져도 100% 울리는 안드로이드 전용 설치 파일입니다.</p>
-        <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 3가지 필수 팁:</b>
+        ${isNativeApp() ? `
+          <div style="background:var(--bg2,#f5f2eb);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;text-align:center;margin:4px 0 10px;font-weight:600;color:var(--tx)">
+            📱 현재 안드로이드 전용 알람 앱(APK) 실행 중입니다 ✅
+          </div>
+        ` : `
+          <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" style="display:block;text-align:center;text-decoration:none;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin:4px 0 6px;">📥 안드로이드 전용 알람 앱(APK) 다운로드</a>
+          <p class="mu" style="font-size:11px;margin:0 0 12px;text-align:center">앱이 완전히 꺼져도 100% 울리는 안드로이드 전용 설치 파일입니다.</p>
+        `}
+        <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 필수 팁:</b>
         <ol style="margin:0 0 10px;padding-left:18px" class="mu">
-          <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴(⋮ 또는 공유 버튼)에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 독립 앱으로 등록되어 백그라운드 유지력이 대폭 강화됩니다.</li>
-          <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>나만의 다이어리(또는 브라우저)</b> > 배터리 > <b>[제한 없음]</b>으로 변경하면 기기가 잠들어도 알람이 중단되지 않습니다.</li>
-          <li><b>서비스 워커 자동 스케줄링</b>: 안드로이드 Chrome 등 지원 브라우저에서는 시스템 스케줄러(TimestampTrigger)에 미리 등록되어 앱이 닫혀도 제시간에 알림이 울립니다.</li>
+          ${isNativeApp() ? `
+            <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>다이어리</b> > 배터리 > <b>[제한 없음]</b>으로 설정하시면 기기가 깊은 절전(Doze) 모드에 들어가도 정시에 정확히 알람이 울립니다.</li>
+            <li><b>알림 및 진동 권한 확인</b>: 스마트폰 알림 설정에서 소리와 팝업 알림이 켜져 있는지 확인해 주세요.</li>
+          ` : `
+            <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴(⋮ 또는 공유 버튼)에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 독립 앱으로 등록되어 백그라운드 유지력이 대폭 강화됩니다.</li>
+            <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>나만의 다이어리(또는 브라우저)</b> > 배터리 > <b>[제한 없음]</b>으로 변경하면 기기가 잠들어도 알람이 중단되지 않습니다.</li>
+            <li><b>서비스 워커 자동 스케줄링</b>: 안드로이드 Chrome 등 지원 브라우저에서는 시스템 스케줄러(TimestampTrigger)에 미리 등록되어 앱이 닫혀도 제시간에 알림이 울립니다.</li>
+          `}
         </ol>
         <button class="ch on" style="width:100%;margin-top:6px" data-a="testbg">⚡ 5초 뒤 백그라운드 알람 테스트하기</button>
         <p class="mu" style="font-size:11px;margin:6px 0 0;text-align:center">버튼 터치 후 즉시 화면을 끄거나 홈 화면으로 나가서 알람과 진동을 확인해 보세요.</p>

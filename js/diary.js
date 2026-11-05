@@ -1,7 +1,6 @@
 /* js/diary.js - [기록] 탭, 암호화 잠금 및 사진 압축 */
 /* record.js: 기록 탭 */
 let U=false,OPEN=new Set();
-const hash=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('dg'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function lockHTML(){const has=!!S.cfg.pw;return `<div class="hd"><h1>기록</h1></div><div class="lk"><p class="mu">${has?'비밀번호를 입력하면 열려요.':'처음이에요. 비밀번호를 정해 주세요. 일기는 기본적으로 잠겨요.'}</p><input id="pw" class="in" type="password" placeholder="비밀번호" autocomplete="off" aria-label="비밀번호">${has?'':'<input id="pw2" class="in" type="password" placeholder="한 번 더" autocomplete="off" aria-label="비밀번호 확인">'}<p class="mu" id="pwm" style="margin:0 0 8px"></p><button class="ch on" data-a="unlock">${has?'열기':'정하고 열기'}</button></div><div id="ls"></div>`}
 const phHTML=a=>a&&a.length?`<div class="ph">${a.map((s,n)=>`<span><img src="${s}" alt="첨부 사진"><button data-a="phd" data-n="${n}" aria-label="사진 삭제">✕</button></span>`).join('')}</div>`:'';
 function recHTML(){if(S.cfg.lock&&!U)return lockHTML();
@@ -20,5 +19,5 @@ const FI=document.createElement('input');FI.type='file';FI.accept='image/*';FI.h
 FI.onchange=async()=>{const f=FI.files[0];FI.value='';if(!f)return;phArr().push(await shrink(f));save();render()};
 A.pho=()=>FI.click();
 A.phd=d=>{phArr().splice(+d.n,1);save();render()};
-document.addEventListener('keydown',e=>{if(e.target.id==='pw'&&e.key==='Enter'&&S.cfg.pw)A.unlock()});
+document.addEventListener('keydown',e=>{if((e.target.id==='pw'||e.target.id==='pw2')&&e.key==='Enter')A.unlock()});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.dt){dayRec().title=t.value;save();return}if(!t.classList.contains('rt'))return;if(t.dataset.day){dayRec().text=t.value;save()}else updItem(t.dataset.id,{detail:t.value})});
