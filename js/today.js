@@ -29,7 +29,7 @@ document.addEventListener('input',e=>{if(e.target.id==='ti')DR.title=e.target.va
 document.addEventListener('keydown',e=>{if(e.target.id==='ti'&&e.key==='Enter')A.add()});
 
 /* sheet.js: 시간·알람 설정 시트 */
-let T=null;const SH=document.getElementById('sheet'),$=id=>document.getElementById(id);
+let T=null;const SH=document.getElementById('sheet');
 function openSheet(id,mode){const i=id&&S.items.find(x=>x.id===id);T={id:id||null,full:!!(i||mode==='new'),title:i?i.title:(mode==='new'?DR.title:''),detail:i?(i.detail||''):'',time:i?i.time:DR.time,alarm:i?i.alarm:DR.alarm,msg:''};drawSheet()}
 function closeSheet(){const back=DY&&(T||R);T=null;R=null;SH.innerHTML='';if(back)drawDay();else{DY=false;GS=false;GE=null}}
 function selHTML(){const t=T.time,h=t?+t.slice(0,2):'',m=t?+t.slice(3):0;
