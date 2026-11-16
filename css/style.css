@@ -80,9 +80,16 @@ textarea{font:inherit}
 .pbtn{padding:8px 10px;border-radius:12px;border:1px solid var(--bd);font-size:13px;display:flex;align-items:center;gap:8px;text-align:left;background:var(--sf)}
 .pdot{width:20px;height:20px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,0.1)}
 .save-bar{position:sticky;bottom:0;background:var(--sf);border:1px solid var(--bd);padding:10px 14px;border-radius:16px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.08);margin:14px 0 8px}
-.set-card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0 16px}
+.set-card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:14px 16px;margin:10px 0 12px;transition:all 0.2s ease}
+.set-card.closed{padding:12px 16px}
+.set-card-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0;background:none;border:none;cursor:pointer;text-align:left;color:inherit;font-family:inherit}
+.set-card-toggle:focus{outline:none}
+.set-card-title{font-size:15px;font-weight:600;display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0}
+.set-card-summary{font-size:12px;color:var(--mu);margin-top:4px;line-height:1.4}
+.set-card-badge{font-size:11px;padding:2px 7px;border-radius:8px;background:var(--bg2,rgba(0,0,0,0.06));color:var(--tx);font-weight:500}
+.set-card-chevron{font-size:13px;color:var(--mu);padding-left:10px;flex:none;transition:transform 0.2s ease}
+.set-card-body{margin-top:12px;padding-top:12px;border-top:1px solid var(--ln)}
 .set-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.set-card-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;margin:0}
 .set-card-desc{font-size:12px;color:var(--mu);margin:0 0 10px}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--ln);min-height:46px}
 .set-row:first-of-type{border-top:none;padding-top:2px}

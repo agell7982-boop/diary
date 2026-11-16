@@ -185,7 +185,10 @@ A.rsave = () => {
   if (g('r-s')) R.start = g('r-s');
   const bad = !R.title.trim() ? '내용을 적어 주세요.' : R.kind === 'wd' && !R.days.length ? '요일을 하나 이상 골라 주세요.' : R.kind === 'every' && !(R.every >= 1) ? '1 이상의 숫자를 적어 주세요.' : !R.start ? '시작일을 골라 주세요.' : '';
   if (bad) { rerr(bad); return; }
-  if (R.alarm !== null && "Notification" in window && Notification.permission === 'default') { Notification.requestPermission(); }
+  if (R.alarm !== null) {
+    if (typeof requestAlarmPermission === 'function') requestAlarmPermission();
+    else if ("Notification" in window && Notification.permission === 'default') Notification.requestPermission();
+  }
   const o = { title: R.title.trim(), time: R.time, alarm: R.alarm, kind: R.kind, days: [...R.days].sort(), every: R.every, start: R.start, detail: R.detail };
   if (R.id) Object.assign(S.reps.find(x => x.id === R.id), o);
   else S.reps.push(Object.assign({ id: uid() }, o));

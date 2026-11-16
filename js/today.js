@@ -156,8 +156,9 @@ if (SH) {
 A.fmt = () => { S.fmt12 = !S.fmt12; save(); drawSheet(); render(); };
 A.ok = () => {
   if (!T) return;
-  if (T.alarm !== null && "Notification" in window && Notification.permission === 'default') {
-    Notification.requestPermission();
+  if (T.alarm !== null) {
+    if (typeof requestAlarmPermission === 'function') requestAlarmPermission();
+    else if ("Notification" in window && Notification.permission === 'default') Notification.requestPermission();
   }
   if (T.id) {
     const o = S.items.find(x => x.id === T.id);

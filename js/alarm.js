@@ -170,6 +170,31 @@ function checkAlarms(){
   }
 }
 
+async function requestAlarmPermission(){
+  if (isNativeApp() && window.Capacitor && window.Capacitor.isPluginAvailable('LocalNotifications')) {
+    try {
+      const { LocalNotifications } = window.Capacitor.Plugins;
+      const perm = await LocalNotifications.checkPermissions();
+      if (perm.display !== 'granted') {
+        const req = await LocalNotifications.requestPermissions();
+        return req.display === 'granted';
+      }
+      return true;
+    } catch (e) {
+      console.warn('Native permission error:', e);
+      return false;
+    }
+  }
+  if ("Notification" in window) {
+    if (Notification.permission === 'default') {
+      const p = await Notification.requestPermission();
+      return p === 'granted';
+    }
+    return Notification.permission === 'granted';
+  }
+  return false;
+}
+
 async function ensureAlarmChannel(LocalNotifications){
   try{
     // 이전 저음질/기본 채널 삭제 시도

@@ -12,6 +12,7 @@ const GRAD_PRESETS=[
 ];
 
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
+let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
 function getActiveCfg(){return TEMP_CFG||S.cfg}
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
@@ -48,10 +49,29 @@ function rgbRow(k,label){
 }
 
 function notiStatusText(){
-  if(!("Notification" in window))return '이 기기는 알림을 지원하지 않아요.';
-  if(Notification.permission==='granted')return '✅ 허용됨 (백그라운드 알림 가능)';
-  if(Notification.permission==='denied')return '❌ 차단됨 (브라우저 주소창 설정 확인)';
-  return '⚠️ 권한 필요 (아래 버튼 터치)';
+  if(isNativeApp()){
+    return S.cfg.bgKeepAlive!==false?'✅ 안드로이드 시스템 알람 켜짐 (화면 꺼짐 100% 보장)':'꺼짐 (화면 꺼짐 시 알람 제한)';
+  }
+  if(!("Notification" in window))return '⚠️ 현재 브라우저는 백그라운드 푸시 알림 미지원';
+  if(Notification.permission==='granted'){
+    return S.cfg.bgKeepAlive!==false?'✅ 알림 허용됨 · 백그라운드 유지 켜짐':'꺼짐 (알림 권한은 허용됨)';
+  }
+  if(Notification.permission==='denied')return '❌ 알림 차단됨 (브라우저 주소창 설정 확인)';
+  return '⚠️ 알림 권한 필요 (버튼 터치하여 허용)';
+}
+
+function secCardHead(secId, title, summary, badgeText){
+  const isOpen=!!SET_SEC_OPEN[secId];
+  return `<button class="set-card-toggle" data-a="settog" data-sec="${secId}" aria-expanded="${isOpen}">
+    <div style="flex:1;min-width:0;text-align:left">
+      <div class="set-card-title">
+        <span>${title}</span>
+        ${badgeText?`<span class="set-card-badge">${badgeText}</span>`:''}
+      </div>
+      <div class="set-card-summary">${summary}</div>
+    </div>
+    <div class="set-card-chevron">${isOpen?'▲':'▼'}</div>
+  </button>`;
 }
 
 function setHTML(){
@@ -67,7 +87,7 @@ function setHTML(){
 
   return `<div class="hd"><h1>설정</h1></div><div id="ls">
 
-<!-- 1. 앱 헤더 & 프로필 -->
+<!-- 앱 상단 프로필 바 -->
 <div style="display:flex;align-items:center;gap:14px;margin:12px 0 14px;padding:12px 16px;border-radius:18px;background:var(--sf);border:1px solid var(--bd)">
   <img src="icon-192.png" alt="앱 아이콘" style="width:48px;height:48px;border-radius:12px;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.06))">
   <div style="flex:1;min-width:0">
@@ -76,228 +96,256 @@ function setHTML(){
   </div>
 </div>
 
-<!-- 2. 계정 & 클라우드 백업 카드 -->
-<div class="set-card">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>☁️ 계정 & 백업</span></div>
-    <span class="mu" style="font-size:12px" id="sy-status-text">${SYMSG[SY.st]||''}${SY.msg?' · '+esc(SY.msg):''}</span>
-  </div>
-  ${accCardHTML()}
-</div>
-
-<!-- 3. 화면 테마 & 색상 카드 -->
-<div class="set-card">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>🎨 화면 테마 & 색상</span></div>
-    <span class="mu" style="font-size:12px">${c.grad?'그라데이션 ON':'단색 배경'}</span>
-  </div>
-  <p class="set-card-desc">원하는 감성 테마를 터치하고 아래 <b>[색상 저장]</b>을 눌러주세요.</p>
-  
-  <div class="presets">${GRAD_PRESETS.map((p,idx)=>`<button class="pbtn" data-a="preset" data-i="${idx}"><span class="pdot" style="background:linear-gradient(135deg,rgb(${p.bg}),rgb(${p.bg2}))"></span><span>${p.name}</span></button>`).join('')}</div>
-
-  <div class="set-row">
-    <span style="font-size:14px">부드러운 그라데이션</span>
-    <button class="ch${c.grad?' on':''}" data-a="grad">${c.grad?'켜짐':'꺼짐'}</button>
-  </div>
-
-  <button class="set-tog-btn" data-a="colortog">${COLOR_DETAIL_OPEN?'▲ 직접 색상 상세 설정 닫기':'▼ 직접 색상 상세 설정하기 (RGB / 팔레트)'}</button>
-
-  ${COLOR_DETAIL_OPEN ? `
-    <div style="margin-top:8px">
-      ${rgbRow('bg','배경색')}
-      ${c.grad?rgbRow('bg2','그라데이션 끝색'):''}
-      ${rgbRow('tx','글자색')}
-      <div style="text-align:right;margin:6px 0"><button class="ch" data-a="cfgreset">색상 기본값으로</button></div>
+<!-- 1. 계정 & 백업 카드 -->
+<div class="set-card${SET_SEC_OPEN.account?'':' closed'}">
+  ${secCardHead('account', '☁️ 계정 & 백업', 'Firebase 계정 로그인 및 클라우드 실시간 자동 동기화', SYMSG[SY.st]||(SY.user?esc(SY.user.displayName||SY.user.email):'로그인 필요'))}
+  ${SET_SEC_OPEN.account ? `
+    <div class="set-card-body">
+      ${accCardHTML()}
     </div>
   ` : ''}
-
-  <div class="save-bar">
-    <div style="flex:1"><span id="color-save-status" class="mu" style="font-size:12px">${isModified?'🎨 미리보기 중 (저장해야 유지돼요)':'현재 색상 적용됨'}</span></div>
-    <button class="ch" data-a="cfgcancel">되돌리기</button>
-    <button class="ch on" data-a="cfgsave">색상 저장</button>
-  </div>
 </div>
 
-<!-- 4. 알람 및 사운드 카드 -->
-<div class="set-card">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>🔔 알람 및 사운드</span></div>
-    <span class="mu" style="font-size:12px">${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound}</span>
-  </div>
-  
-  <div class="set-row">
-    <div>
-      <div style="font-size:14px">푸시 알림 권한</div>
-      <div class="mu" style="font-size:12px">${notiStatusText()}</div>
-    </div>
-    <button class="ch on" data-a="reqnoti">권한 받기</button>
-  </div>
+<!-- 2. 화면 테마 & 색상 카드 -->
+<div class="set-card${SET_SEC_OPEN.theme?'':' closed'}">
+  ${secCardHead('theme', '🎨 화면 테마 & 색상', '배경색, 은은한 그라데이션, 다크모드 및 프리셋 테마', c.grad?'그라데이션 ON':'단색 배경')}
+  ${SET_SEC_OPEN.theme ? `
+    <div class="set-card-body">
+      <p class="set-card-desc">원하는 감성 테마를 터치하고 아래 <b>[색상 저장]</b>을 눌러주세요.</p>
+      
+      <div class="presets">${GRAD_PRESETS.map((p,idx)=>`<button class="pbtn" data-a="preset" data-i="${idx}"><span class="pdot" style="background:linear-gradient(135deg,rgb(${p.bg}),rgb(${p.bg2}))"></span><span>${p.name}</span></button>`).join('')}</div>
 
-  <div class="set-row">
-    <div>
-      <div style="font-size:14px">화면 꺼짐 시 알람 유지 (백그라운드)</div>
-      <div class="mu" style="font-size:12px">${S.cfg.bgKeepAlive!==false?'켜짐 (화면 꺼짐 시 절전 차단 및 정시 알람)':'꺼짐 (화면 꺼지면 알람 안 옴)'}</div>
-    </div>
-    <button class="ch${S.cfg.bgKeepAlive!==false?' on':''}" data-a="bgaktog">${S.cfg.bgKeepAlive!==false?'켜짐':'꺼짐'}</button>
-  </div>
-
-  <div class="set-col">
-    <label class="mu" for="sel-snd" style="display:block;margin-bottom:6px">알람 소리 선택</label>
-    <select id="sel-snd" class="in" style="margin:0 0 8px">
-      <option value="chime"${curSound==='chime'?' selected':''}>맑은 차임 (기본)</option>
-      <option value="beep"${curSound==='beep'?' selected':''}>디지털 시계 비프</option>
-      <option value="bell"${curSound==='bell'?' selected':''}>부드러운 종소리</option>
-      <option value="marimba"${curSound==='marimba'?' selected':''}>경쾌한 마림바</option>
-      <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
-    </select>
-    <div class="rw" style="margin:4px 0">
-      <button class="ch${isPreviewPlaying?' on':''}" data-a="testsnd">${isPreviewPlaying?'⏹️ 재생 정지':'소리 미리듣기 🔔'}</button>
-      <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
-      ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
-    </div>
-    <p class="mu" style="font-size:12px;margin:6px 0 10px">내 폰에 있는 mp3 음악 파일을 알람음으로 등록할 수 있어요.</p>
-
-    <!-- 알람 음량 조절 슬라이더 -->
-    <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin:8px 0 10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:500">${curVol===0?'🔇 음소거':curVol<40?'🔈 알람 음량 (작게)':curVol<75?'🔉 알람 음량 (중간)':'🔊 알람 음량 (크게)'}</span>
-        <b id="vol-val" style="font-size:13px;color:var(--ac)">${curVol}%</b>
+      <div class="set-row">
+        <span style="font-size:14px">부드러운 그라데이션</span>
+        <button class="ch${c.grad?' on':''}" data-a="grad">${c.grad?'켜짐':'꺼짐'}</button>
       </div>
-      <input id="alm-vol" type="range" min="0" max="100" step="5" value="${curVol}" style="width:100%" aria-label="알람 음량">
-    </div>
 
-    <div class="save-bar" style="margin:10px 0 4px">
-      <div style="flex:1">
-        <span id="snd-save-status" class="mu" style="font-size:12px">
-          ${isSndModified?'🎵 소리/음량이 변경되었어요 (저장 필요)':`현재 적용: ${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound} · ${curVol}%`}
-        </span>
+      <button class="set-tog-btn" data-a="colortog">${COLOR_DETAIL_OPEN?'▲ 직접 색상 상세 설정 닫기':'▼ 직접 색상 상세 설정하기 (RGB / 팔레트)'}</button>
+
+      ${COLOR_DETAIL_OPEN ? `
+        <div style="margin-top:8px">
+          ${rgbRow('bg','배경색')}
+          ${c.grad?rgbRow('bg2','그라데이션 끝색'):''}
+          ${rgbRow('tx','글자색')}
+          <div style="text-align:right;margin:6px 0"><button class="ch" data-a="cfgreset">색상 기본값으로</button></div>
+        </div>
+      ` : ''}
+
+      <div class="save-bar">
+        <div style="flex:1"><span id="color-save-status" class="mu" style="font-size:12px">${isModified?'🎨 미리보기 중 (저장해야 유지돼요)':'현재 색상 적용됨'}</span></div>
+        <button class="ch" data-a="cfgcancel">되돌리기</button>
+        <button class="ch on" data-a="cfgsave">색상 저장</button>
       </div>
-      ${isSndModified?'<button class="ch" data-a="sndcancel">취소</button>':''}
-      <button class="ch on" data-a="sendsave">알람 소리 저장</button>
     </div>
-  </div>
+  ` : ''}
+</div>
 
-  <div class="set-col" style="margin-top:6px">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-size:14px;font-weight:500">📱 꺼진 상태 / 백그라운드 알람 가이드</div>
-        <div class="mu" style="font-size:12px">앱이 닫혀 있거나 화면이 꺼져도 알림 받기</div>
-      </div>
-      <button class="ch" data-a="almtog">${ALARM_GUIDE_OPEN?'닫기':'보기'}</button>
-    </div>
-
-    ${ALARM_GUIDE_OPEN ? `
-      <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6">
-        ${isNativeApp() ? `
-          <div style="background:var(--bg2,#f5f2eb);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;text-align:center;margin:4px 0 10px;font-weight:600;color:var(--tx)">
-            📱 현재 안드로이드 전용 알람 앱(APK) 실행 중입니다 ✅
+<!-- 3. 알람 및 사운드 카드 (통합 백그라운드 & 시스템 알람) -->
+<div class="set-card${SET_SEC_OPEN.alarm?'':' closed'}">
+  ${secCardHead('alarm', '🔔 알람 및 사운드', '화면 꺼짐 시 알람 유지, 알람 벨소리 선택 및 음량 조절', `${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound} · ${curVol}%`)}
+  ${SET_SEC_OPEN.alarm ? `
+    <div class="set-card-body">
+      <!-- 통합된 화면 꺼짐 및 백그라운드 알람 스위치 -->
+      <div class="set-row">
+        <div style="padding-right:10px">
+          <div style="font-size:14px;font-weight:500">화면 꺼짐 및 백그라운드 알람 유지</div>
+          <div class="mu" style="font-size:12px;margin-top:2px">${notiStatusText()}</div>
+          <div class="mu" style="font-size:11px;margin-top:2px;line-height:1.35">
+            ${isNativeApp() 
+              ? '안드로이드 시스템 알람 엔진으로 앱이 닫히거나 화면이 꺼져도 100% 정시에 울려요.' 
+              : ('Notification' in window 
+                ? '화면 꺼짐 시 절전 방지 무음 재생 및 정시 푸시 알림으로 소리를 울려요.' 
+                : '현재 브라우저는 화면 꺼짐 푸시 알림을 지원하지 않습니다. 100% 정시 알람을 위해 전용 APK 앱 이용을 권장합니다.')}
           </div>
+        </div>
+        ${!isNativeApp() && !("Notification" in window) ? `
+          <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" class="ch on" style="text-decoration:none;font-size:12px;padding:6px 10px;white-space:nowrap;flex:none">APK 받기</a>
         ` : `
-          <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" style="display:block;text-align:center;text-decoration:none;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin:4px 0 6px;">📥 안드로이드 전용 알람 앱(APK) 다운로드</a>
-          <p class="mu" style="font-size:11px;margin:0 0 12px;text-align:center">앱이 완전히 꺼져도 100% 울리는 안드로이드 전용 설치 파일입니다.</p>
+          <button class="ch${(isNativeApp() ? S.cfg.bgKeepAlive!==false : (('Notification' in window && Notification.permission==='granted') && S.cfg.bgKeepAlive!==false)) ? ' on' : ''}" data-a="bgalmtog" style="flex:none;white-space:nowrap">
+            ${(isNativeApp() 
+              ? (S.cfg.bgKeepAlive!==false ? '켜짐' : '꺼짐') 
+              : (!('Notification' in window) 
+                ? '미지원' 
+                : (Notification.permission!=='granted' ? '권한 허용 & 켜기' : (S.cfg.bgKeepAlive!==false ? '켜짐' : '꺼짐'))))}
+          </button>
         `}
-        <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 필수 팁:</b>
-        <ol style="margin:0 0 10px;padding-left:18px" class="mu">
-          ${isNativeApp() ? `
-            <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>다이어리</b> > 배터리 > <b>[제한 없음]</b>으로 설정하시면 기기가 깊은 절전(Doze) 모드에 들어가도 정시에 정확히 알람이 울립니다.</li>
-            <li><b>알림 및 진동 권한 확인</b>: 스마트폰 알림 설정에서 소리와 팝업 알림이 켜져 있는지 확인해 주세요.</li>
-          ` : `
-            <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴(⋮ 또는 공유 버튼)에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 독립 앱으로 등록되어 백그라운드 유지력이 대폭 강화됩니다.</li>
-            <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>나만의 다이어리(또는 브라우저)</b> > 배터리 > <b>[제한 없음]</b>으로 변경하면 기기가 잠들어도 알람이 중단되지 않습니다.</li>
-            <li><b>서비스 워커 자동 스케줄링</b>: 안드로이드 Chrome 등 지원 브라우저에서는 시스템 스케줄러(TimestampTrigger)에 미리 등록되어 앱이 닫혀도 제시간에 알림이 울립니다.</li>
-          `}
-        </ol>
-        <button class="ch on" style="width:100%;margin-top:6px" data-a="testbg">⚡ 5초 뒤 백그라운드 알람 테스트하기</button>
-        <p class="mu" style="font-size:11px;margin:6px 0 0;text-align:center">버튼 터치 후 즉시 화면을 끄거나 홈 화면으로 나가서 알람과 진동을 확인해 보세요.</p>
       </div>
-    ` : ''}
-  </div>
+
+      <!-- 알람 소리 선택 및 커스텀 MP3 -->
+      <div class="set-col">
+        <label class="mu" for="sel-snd" style="display:block;margin-bottom:6px">알람 소리 선택</label>
+        <select id="sel-snd" class="in" style="margin:0 0 8px">
+          <option value="chime"${curSound==='chime'?' selected':''}>맑은 차임 (기본)</option>
+          <option value="beep"${curSound==='beep'?' selected':''}>디지털 시계 비프</option>
+          <option value="bell"${curSound==='bell'?' selected':''}>부드러운 종소리</option>
+          <option value="marimba"${curSound==='marimba'?' selected':''}>경쾌한 마림바</option>
+          <option value="custom"${curSound==='custom'?' selected':''}${hasCustomAudio?'':' disabled'}>내 음원 파일 ${hasCustomAudio?'('+esc(S.cfg.customAudioName)+')':'(파일 등록 필요)'}</option>
+        </select>
+        <div class="rw" style="margin:4px 0">
+          <button class="ch${isPreviewPlaying?' on':''}" data-a="testsnd">${isPreviewPlaying?'⏹️ 재생 정지':'소리 미리듣기 🔔'}</button>
+          <button class="ch on" data-a="audp">내 음원(mp3) 첨부</button>
+          ${hasCustomAudio?'<button class="ch" data-a="audx">음원 삭제</button>':''}
+        </div>
+        <p class="mu" style="font-size:12px;margin:6px 0 10px">내 폰에 있는 mp3 음악 파일을 알람음으로 등록할 수 있어요.</p>
+
+        <!-- 알람 음량 조절 슬라이더 -->
+        <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin:8px 0 10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:500">${curVol===0?'🔇 음소거':curVol<40?'🔈 알람 음량 (작게)':curVol<75?'🔉 알람 음량 (중간)':'🔊 알람 음량 (크게)'}</span>
+            <b id="vol-val" style="font-size:13px;color:var(--ac)">${curVol}%</b>
+          </div>
+          <input id="alm-vol" type="range" min="0" max="100" step="5" value="${curVol}" style="width:100%" aria-label="알람 음량">
+        </div>
+
+        <div class="save-bar" style="margin:10px 0 4px">
+          <div style="flex:1">
+            <span id="snd-save-status" class="mu" style="font-size:12px">
+              ${isSndModified?'🎵 소리/음량이 변경되었어요 (저장 필요)':`현재 적용: ${curSound==='custom'&&(S.cfg.customAudioName)?esc(S.cfg.customAudioName):SOUND_NAMES[curSound]||curSound} · ${curVol}%`}
+            </span>
+          </div>
+          ${isSndModified?'<button class="ch" data-a="sndcancel">취소</button>':''}
+          <button class="ch on" data-a="sendsave">알람 소리 저장</button>
+        </div>
+      </div>
+
+      <!-- 꺼진 상태 / 백그라운드 알람 가이드 및 5초 테스트 -->
+      <div class="set-col" style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px;font-weight:500">📱 꺼진 상태 / 백그라운드 알람 가이드</div>
+            <div class="mu" style="font-size:12px">화면이 꺼져도 100% 알람을 받는 방법</div>
+          </div>
+          <button class="ch" data-a="almtog">${ALARM_GUIDE_OPEN?'닫기':'보기'}</button>
+        </div>
+
+        ${ALARM_GUIDE_OPEN ? `
+          <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6">
+            ${isNativeApp() ? `
+              <div style="background:var(--bg2,#f5f2eb);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;text-align:center;margin:4px 0 10px;font-weight:600;color:var(--tx)">
+                📱 현재 안드로이드 전용 알람 앱(APK) 실행 중입니다 ✅
+              </div>
+            ` : `
+              <a href="https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk" style="display:block;text-align:center;text-decoration:none;background:var(--ac);color:#fff;border-radius:12px;padding:12px;font-weight:600;font-size:14px;margin:4px 0 6px;">📥 안드로이드 전용 알람 앱(APK) 다운로드</a>
+              <p class="mu" style="font-size:11px;margin:0 0 12px;text-align:center">화면이 완전히 꺼져도 100% 울리는 안드로이드 전용 설치 파일입니다.</p>
+            `}
+            <b style="color:var(--tx);display:block;margin-bottom:6px">📌 확실한 알람을 위한 팁:</b>
+            <ol style="margin:0 0 10px;padding-left:18px" class="mu">
+              ${isNativeApp() ? `
+                <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>다이어리</b> > 배터리 > <b>[제한 없음]</b>으로 설정하시면 기기가 깊은 절전(Doze) 모드에 들어가도 정시에 정확히 알람이 울립니다.</li>
+                <li><b>알림 및 진동 권한 확인</b>: 스마트폰 알림 설정에서 소리와 팝업 알림이 켜져 있는지 확인해 주세요.</li>
+              ` : `
+                <li><b>홈 화면에 앱 설치 (PWA)</b>: 브라우저 메뉴에서 <b>[홈 화면에 추가]</b> 또는 <b>[앱 설치]</b>를 눌러주세요. 백그라운드 유지력이 대폭 강화됩니다.</li>
+                <li><b>배터리 절전 예외 설정</b>: 스마트폰 설정 > 애플리케이션 > <b>다이어리(또는 브라우저)</b> > 배터리 > <b>[제한 없음]</b>으로 변경하면 기기가 잠들어도 알람이 중단되지 않습니다.</li>
+                <li><b>전용 앱 사용 권장</b>: 웹 브라우저는 백그라운드 제약이 있을 수 있으므로 정밀한 알람이 필요할 때는 상단의 [전용 APK 앱] 설치를 권장합니다.</li>
+              `}
+            </ol>
+            <button class="ch on" style="width:100%;margin-top:6px" data-a="testbg">⚡ 5초 뒤 백그라운드 알람 테스트하기</button>
+            <p class="mu" style="font-size:11px;margin:6px 0 0;text-align:center">버튼 터치 후 즉시 화면을 끄거나 홈 화면으로 나가서 알람과 진동을 확인해 보세요.</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  ` : ''}
 </div>
 
-<!-- 5. 하루 일정 조절 알림 (데일리 루틴) 카드 -->
-<div class="set-card">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>📋 하루 일정 조절 알림</span></div>
-    <button class="ch${dr.enabled?' on':''}" data-a="drtog">${dr.enabled?'켜짐':'꺼짐'}</button>
-  </div>
-  <p class="set-card-desc">
-    매일 정해진 시간에 오늘의 일정을 확인하고 하루 계획을 조절할 수 있도록 알람과 메시지를 보내드립니다.
-  </p>
-  
-  <div class="set-col" style="margin-top:6px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <label class="mu" for="dr-time" style="font-size:13px;font-weight:500">알림 시간 설정</label>
-      <span style="font-size:13px;font-weight:600;color:var(--ac)">${fmtTime(dr.time)}</span>
-    </div>
-    <input id="dr-time" class="in" type="time" value="${dr.time||'08:30'}" aria-label="하루 일정 조절 알림 시간" style="margin-bottom:8px">
+<!-- 4. 하루 일정 조절 알림 카드 -->
+<div class="set-card${SET_SEC_OPEN.daily?'':' closed'}">
+  ${secCardHead('daily', '📋 하루 일정 조절 알림', '매일 지정한 시간에 오늘의 일정을 점검하고 계획을 조절', dr.enabled ? `${fmtTime(dr.time)} 켜짐` : '꺼짐')}
+  ${SET_SEC_OPEN.daily ? `
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px;font-weight:500">매일 일정 조절 알림 받기</div>
+          <div class="mu" style="font-size:12px">지정한 시간에 오늘 일정 안내 팝업과 소리를 울려요.</div>
+        </div>
+        <button class="ch${dr.enabled?' on':''}" data-a="drtog">${dr.enabled?'켜짐':'꺼짐'}</button>
+      </div>
 
-    <label class="mu" for="dr-msg" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">알림 메시지 문구</label>
-    <input id="dr-msg" class="in" value="${esc(dr.msg||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝')}" placeholder="알림 메시지를 입력하세요" aria-label="알림 메시지" style="margin-bottom:10px">
+      <div class="set-col" style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label class="mu" for="dr-time" style="font-size:13px;font-weight:500">알림 시간 설정</label>
+          <span style="font-size:13px;font-weight:600;color:var(--ac)">${fmtTime(dr.time)}</span>
+        </div>
+        <input id="dr-time" class="in" type="time" value="${dr.time||'08:30'}" aria-label="하루 일정 조절 알림 시간" style="margin-bottom:8px">
 
-    <div class="rw" style="gap:6px">
-      <button class="ch" style="flex:1" data-a="drtest">⚡ 알림 미리보기</button>
-      <button class="ch on" style="flex:1" data-a="drsave">설정 저장</button>
+        <label class="mu" for="dr-msg" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">알림 메시지 문구</label>
+        <input id="dr-msg" class="in" value="${esc(dr.msg||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝')}" placeholder="알림 메시지를 입력하세요" aria-label="알림 메시지" style="margin-bottom:10px">
+
+        <div class="rw" style="gap:6px">
+          <button class="ch" style="flex:1" data-a="drtest">⚡ 알림 미리보기</button>
+          <button class="ch on" style="flex:1" data-a="drsave">설정 저장</button>
+        </div>
+      </div>
     </div>
-  </div>
+  ` : ''}
 </div>
 
-<!-- 6. 글꼴 & 보기 설정 카드 -->
-<div class="set-card">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>🔤 글꼴 & 보기</span></div>
-  </div>
+<!-- 5. 글꼴 & 보기 설정 카드 -->
+<div class="set-card${SET_SEC_OPEN.font?'':' closed'}">
+  ${secCardHead('font', '🔤 글꼴 & 보기 설정', '글자 크기 조절, 나만의 글꼴(TTF) 첨부, 12/24시간제 표기', `${S.cfg.fs||15}px · ${S.fmt12?'12시간제':'24시간제'}`)}
+  ${SET_SEC_OPEN.font ? `
+    <div class="set-card-body">
+      <div class="set-col">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:14px">글자 크기</span>
+          <b id="fsv" style="font-size:14px;color:var(--ac)">${S.cfg.fs||15}px</b>
+        </div>
+        <input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
+      </div>
 
-  <div class="set-col">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <span style="font-size:14px">글자 크기</span>
-      <b id="fsv" style="font-size:14px;color:var(--ac)">${S.cfg.fs||15}px</b>
-    </div>
-    <input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
-  </div>
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px">글꼴 파일</div>
+          <div class="mu" style="font-size:12px">${esc(S.cfg.fontName||'기본 글꼴 (Noto Sans)')}</div>
+        </div>
+        <div class="rw" style="gap:6px">
+          <button class="ch" data-a="fontp">파일 첨부</button>
+          ${S.cfg.fontName?'<button class="ch" data-a="fontx">기본으로</button>':''}
+        </div>
+      </div>
 
-  <div class="set-row">
-    <div>
-      <div style="font-size:14px">글꼴 파일</div>
-      <div class="mu" style="font-size:12px">${esc(S.cfg.fontName||'기본 글꼴 (Noto Sans)')}</div>
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px">시간 표기 방식</div>
+          <div class="mu" style="font-size:12px">${S.fmt12?'오전/오후 12시간제':'24시간제'}</div>
+        </div>
+        <button class="ch on" data-a="fmt2">변경</button>
+      </div>
     </div>
-    <div class="rw" style="gap:6px">
-      <button class="ch" data-a="fontp">파일 첨부</button>
-      ${S.cfg.fontName?'<button class="ch" data-a="fontx">기본으로</button>':''}
-    </div>
-  </div>
-
-  <div class="set-row">
-    <div>
-      <div style="font-size:14px">시간 표기 방식</div>
-      <div class="mu" style="font-size:12px">${S.fmt12?'오전/오후 12시간제':'24시간제'}</div>
-    </div>
-    <button class="ch on" data-a="fmt2">변경</button>
-  </div>
+  ` : ''}
 </div>
 
 <!-- 6. 일기 보안 & 잠금 카드 -->
-<div class="set-card" style="margin-bottom:28px">
-  <div class="set-card-head">
-    <div class="set-card-title"><span>🔐 일기 보안 & 잠금</span></div>
-    <button class="ch${S.cfg.lock?' on':''}" data-a="lockt">${S.cfg.lock?'잠금 켜짐':'잠금 꺼짐'}</button>
-  </div>
+<div class="set-card${SET_SEC_OPEN.lock?'':' closed'}" style="margin-bottom:28px">
+  ${secCardHead('lock', '🔐 일기 보안 & 잠금', '비밀번호 설정 및 일기장 SHA-256 단방향 암호화 잠금', S.cfg.lock ? '🔒 잠금 켜짐' : '🔓 잠금 꺼짐')}
+  ${SET_SEC_OPEN.lock ? `
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px">일기장 암호화 잠금</div>
+          <div class="mu" style="font-size:12px">${S.cfg.lock ? '앱 실행 시 일기 조회에 비밀번호가 필요해요.' : '비밀번호 없이 일기를 바로 볼 수 있어요.'}</div>
+        </div>
+        <button class="ch${S.cfg.lock?' on':''}" data-a="lockt">${S.cfg.lock?'잠금 켜짐':'잠금 꺼짐'}</button>
+      </div>
 
-  <div class="set-col">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-size:14px">비밀번호 설정</div>
-        <div class="mu" style="font-size:12px">${has?'비밀번호 설정됨':'아직 설정되지 않음'}</div>
+      <div class="set-col">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px">비밀번호 설정</div>
+            <div class="mu" style="font-size:12px">${has?'비밀번호 설정됨':'아직 설정되지 않음'}</div>
+          </div>
+          <button class="ch" data-a="pwtog">${PW_BOX_OPEN?'닫기':(has?'비밀번호 변경':'비밀번호 등록')}</button>
+        </div>
+        ${PW_BOX_OPEN ? `
+          <div style="margin-top:10px">
+            <input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호">
+            <input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호" style="margin-top:4px">
+            <button class="ch on" style="width:100%;margin-top:8px" data-a="chpw">비밀번호 저장</button>
+          </div>
+        ` : ''}
       </div>
-      <button class="ch" data-a="pwtog">${PW_BOX_OPEN?'닫기':(has?'비밀번호 변경':'비밀번호 등록')}</button>
     </div>
-    ${PW_BOX_OPEN ? `
-      <div style="margin-top:10px">
-        <input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호">
-        <input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호" style="margin-top:4px">
-        <button class="ch on" style="width:100%;margin-top:8px" data-a="chpw">비밀번호 저장</button>
-      </div>
-    ` : ''}
-  </div>
+  ` : ''}
 </div>
 
 </div>`;
@@ -355,14 +403,66 @@ A.cfgcancel=()=>{
 };
 
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
-A.reqnoti=async()=>{if(!("Notification" in window)){toast('이 브라우저는 알림을 지원하지 않아요');return}const p=await Notification.requestPermission();render();toast(p==='granted'?'알림이 허용되었어요!':'알림 권한을 받지 못했어요')};
-A.bgaktog=()=>{
-  S.cfg.bgKeepAlive = S.cfg.bgKeepAlive === false ? true : false;
-  save();
-  updateBgKeepAlive();
-  render();
-  toast(S.cfg.bgKeepAlive ? '화면 꺼짐 알람 유지가 켜졌어요 🔋' : '화면 꺼짐 알람 유지가 꺼졌어요');
+A.settog=d=>{const s=d.sec;if(s){SET_SEC_OPEN[s]=!SET_SEC_OPEN[s];render()}};
+A.bgalmtog=async()=>{
+  if(isNativeApp()){
+    if(window.Capacitor && window.Capacitor.isPluginAvailable('LocalNotifications')){
+      const { LocalNotifications } = window.Capacitor.Plugins;
+      try{
+        const perm = await LocalNotifications.checkPermissions();
+        if(perm.display !== 'granted'){
+          const req = await LocalNotifications.requestPermissions();
+          if(req.display !== 'granted'){
+            toast('안드로이드 시스템 알림 권한이 허용되지 않았어요');
+            return;
+          }
+        }
+      }catch(e){
+        console.warn('Native permission error:', e);
+      }
+    }
+    S.cfg.bgKeepAlive = S.cfg.bgKeepAlive === false ? true : false;
+    save();
+    updateBgKeepAlive();
+    if(typeof syncScheduledNotifications === 'function') syncScheduledNotifications();
+    render();
+    toast(S.cfg.bgKeepAlive ? '화면 꺼짐 시 시스템 알람 유지가 켜졌어요 🔔' : '화면 꺼짐 알람 유지가 꺼졌어요');
+    return;
+  }
+
+  if(!("Notification" in window)){
+    S.cfg.bgKeepAlive = S.cfg.bgKeepAlive === false ? true : false;
+    save();
+    updateBgKeepAlive();
+    render();
+    toast(S.cfg.bgKeepAlive ? '앱 켜진 상태 알람 유지가 켜졌어요 🔋 (화면 꺼짐 알람은 전용 APK 앱 권장)' : '알람 유지가 꺼졌어요');
+    return;
+  }
+
+  if(Notification.permission !== 'granted'){
+    const p = await Notification.requestPermission();
+    if(p === 'granted'){
+      S.cfg.bgKeepAlive = true;
+      save();
+      updateBgKeepAlive();
+      if(typeof syncScheduledNotifications === 'function') syncScheduledNotifications();
+      render();
+      toast('알림 권한이 허용되고 화면 꺼짐 알람 유지가 켜졌어요! 🔔');
+    }else{
+      render();
+      toast('알림 권한이 허용되지 않아 백그라운드 알람이 제한될 수 있어요');
+    }
+  }else{
+    S.cfg.bgKeepAlive = S.cfg.bgKeepAlive === false ? true : false;
+    save();
+    updateBgKeepAlive();
+    if(typeof syncScheduledNotifications === 'function') syncScheduledNotifications();
+    render();
+    toast(S.cfg.bgKeepAlive ? '백그라운드 알람 유지가 켜졌어요 🔋' : '백그라운드 알람 유지가 꺼졌어요');
+  }
 };
+A.reqnoti=A.bgalmtog;
+A.bgaktog=A.bgalmtog;
 A.almtog=()=>{ALARM_GUIDE_OPEN=!ALARM_GUIDE_OPEN;render()};
 A.testsnd=()=>{
   if(isPreviewPlaying){
@@ -395,7 +495,49 @@ A.sndcancel=()=>{
   toast('소리 및 음량 변경을 취소했어요.');
 };
 A.testbg=async()=>{
-  if(!("Notification" in window)){toast('이 기기는 알림을 지원하지 않아요');return}
+  if(isNativeApp()){
+    if(window.Capacitor && window.Capacitor.isPluginAvailable('LocalNotifications')){
+      const { LocalNotifications } = window.Capacitor.Plugins;
+      try{
+        const perm = await LocalNotifications.checkPermissions();
+        if(perm.display !== 'granted'){
+          const req = await LocalNotifications.requestPermissions();
+          if(req.display !== 'granted'){
+            toast('안드로이드 알림 권한을 먼저 허용해 주세요');
+            return;
+          }
+        }
+        await ensureAlarmChannel(LocalNotifications);
+        const targetTime = new Date(Date.now() + 5000);
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: 999999,
+            title: '[다이어리 알람 테스트] 🔔',
+            body: '화면이 꺼진 상태에서도 안드로이드 시스템 알람이 성공적으로 도착했어요!',
+            schedule: { at: targetTime, allowWhileIdle: true },
+            channelId: ALARM_CHANNEL_ID,
+            sound: 'alarm_bell.wav',
+            foreground: true
+          }]
+        });
+        toast('5초 뒤 시스템 알람이 울려요! 지금 바로 화면을 끄고 소리를 확인해 보세요 🔔');
+        return;
+      }catch(e){
+        console.warn('Native test alarm error:', e);
+      }
+    }
+  }
+
+  if(!("Notification" in window)){
+    toast('5초 뒤 소리 알람이 울려요! (이 브라우저는 푸시 팝업을 지원하지 않아 소리만 울립니다)');
+    setTimeout(()=>{
+      const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+      playAlarmSound(TEMP_SND||S.cfg.alarmSound||'chime',v);
+      showAlarmModal('알람 테스트','소리 알람 테스트 성공!','웹 브라우저에서 알람 소리가 정상 재생되었습니다.');
+    },5000);
+    return;
+  }
+
   if(Notification.permission!=='granted'){
     const p=await Notification.requestPermission();
     if(p!=='granted'){toast('알림 권한을 먼저 허용해 주세요');return}
