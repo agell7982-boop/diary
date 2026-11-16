@@ -34,6 +34,7 @@ function createMockDom() {
         focus: () => {},
         select: () => {},
         click: () => {},
+        remove: () => {},
         scrollIntoView: () => {}
       });
     }
@@ -156,6 +157,8 @@ function createMockDom() {
           getPending: () => Promise.resolve({ notifications: [] }),
           schedule: () => Promise.resolve(),
           cancel: () => Promise.resolve(),
+          createChannel: () => Promise.resolve(),
+          deleteChannel: () => Promise.resolve(),
           addListener: () => {}
         }
       }
@@ -280,15 +283,56 @@ async function runTest() {
     console.log('Web mode isNativeApp():', isNativeApp());
     const cardHtmlWeb = accCardHTML();
     console.log('Web accCardHTML contains [Google로 간편 로그인]:', cardHtmlWeb.includes('Google로 간편 로그인'));
+
+    // Test Daily Routine Reminder
+    console.log("=== DAILY ROUTINE REMINDER TEST ===");
+    console.log('Daily Routine initial enabled:', S.cfg.dailyRoutine.enabled);
+    A.drtog();
+    console.log('Daily Routine after drtog:', S.cfg.dailyRoutine.enabled);
+    A.drsave();
+    console.log('Daily Routine after drsave:', S.cfg.dailyRoutine.time, S.cfg.dailyRoutine.msg);
+    A.drtest();
+    console.log('Daily Routine drtest triggered successfully');
   `, ctx);
 
   console.log('\n--- 7. ALARM CHECKS & NATIVE SYNC ---');
   await vm.runInContext(`
     (async () => {
+      // Re-enable native capacitor
+      window.Capacitor = {
+        isNativePlatform: () => true,
+        getPlatform: () => 'android',
+        isPluginAvailable: () => true,
+        Plugins: {
+          LocalNotifications: {
+            checkPermissions: () => Promise.resolve({ display: 'granted' }),
+            requestPermissions: () => Promise.resolve({ display: 'granted' }),
+            getPending: () => Promise.resolve({ notifications: [] }),
+            schedule: (opts) => {
+              console.log('Scheduled notifications count:', opts.notifications.length);
+              console.log('Channel ID used:', opts.notifications[0] && opts.notifications[0].channelId);
+              console.log('Sound used:', opts.notifications[0] && opts.notifications[0].sound);
+              return Promise.resolve();
+            },
+            cancel: () => Promise.resolve(),
+            createChannel: (ch) => {
+              console.log('Created Notification Channel:', ch.id, 'importance:', ch.importance, 'sound:', ch.sound);
+              return Promise.resolve();
+            },
+            deleteChannel: () => Promise.resolve(),
+            addListener: () => {}
+          }
+        }
+      };
+
       checkAlarms();
       console.log('checkAlarms executed successfully');
       const nativeOk = await syncNativeAlarms();
       console.log('syncNativeAlarms result:', nativeOk);
+
+      // Test custom audio
+      await playAlarmSound('custom', 90, false);
+      console.log('playAlarmSound(custom) executed without error');
     })()
   `, ctx);
 

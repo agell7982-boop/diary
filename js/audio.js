@@ -24,6 +24,8 @@ document.addEventListener('click',primeBgAudio,{passive:true});
 
 function hasPendingAlarms(){
   const now=Date.now(), oneDayLater=now+24*3600*1000, fired=getFiredAlarms(), td=ymd(new Date());
+  
+  // 1) 일반 일정
   const hasItem=(S.items||[]).some(item=>{
     if(!item.time||item.alarm===null||item.done)return false;
     const itemDateTime=new Date(`${item.date}T${item.time}:00`).getTime();
@@ -33,6 +35,7 @@ function hasPendingAlarms(){
   });
   if(hasItem)return true;
 
+  // 2) 반복 일정
   const hasRep=(S.reps||[]).some(r=>{
     if(!r.time||r.alarm===null||r.alarm===undefined)return false;
     if(!repOn(r,td))return false;
@@ -43,7 +46,20 @@ function hasPendingAlarms(){
     const triggerTime=repDateTime-(r.alarm*60*1000);
     return triggerTime>(now-60000)&&triggerTime<oneDayLater&&!fired[`rep_${r.id}_${td}_${triggerTime}`];
   });
-  return hasRep;
+  if(hasRep)return true;
+
+  // 3) 하루 일정 조절 알림
+  const dr = S.cfg && S.cfg.dailyRoutine;
+  if(dr && dr.enabled && dr.time){
+    const drDateTime = new Date(`${td}T${dr.time}:00`).getTime();
+    if(!isNaN(drDateTime)){
+      if(drDateTime > (now-60000) && drDateTime < oneDayLater && !fired[`daily_routine_${td}_${dr.time}`]){
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function updateBgKeepAlive(){
@@ -58,6 +74,7 @@ function updateBgKeepAlive(){
 }
 
 let activeAudioCtx=null, activeMasterGain=null, activeSourceNodes=[], curAudioNode=null, isPreviewPlaying=false;
+let customHtmlAudio=null;
 
 function updatePreviewBtnUI(){
   const btn=document.querySelector('[data-a="testsnd"]');
@@ -68,6 +85,10 @@ function updatePreviewBtnUI(){
 }
 
 function stopAlarmSound(){
+  if(customHtmlAudio){
+    try{ customHtmlAudio.pause(); customHtmlAudio.currentTime=0; }catch(e){}
+    customHtmlAudio=null;
+  }
   activeSourceNodes.forEach(src=>{try{src.stop()}catch(e){}});
   activeSourceNodes=[];
   if(curAudioNode){try{curAudioNode.stop()}catch(e){};curAudioNode=null}
@@ -77,6 +98,9 @@ function stopAlarmSound(){
 
 function updatePlayingVolume(rawVol){
   const v=Math.max(0,Math.min(100,rawVol!==undefined?rawVol:80))/100;
+  if(customHtmlAudio){
+    try{ customHtmlAudio.volume = v; }catch(e){}
+  }
   if(activeMasterGain&&activeAudioCtx&&activeAudioCtx.state==='running'){
     activeMasterGain.gain.setValueAtTime(v,activeAudioCtx.currentTime);
   }
@@ -90,6 +114,45 @@ async function playAlarmSound(type, customVol, isPreview){
   const volScale=Math.max(0,Math.min(100,rawVol))/100;
   if(volScale<=0)return;
 
+  if(isPreview){
+    isPreviewPlaying=true;
+    updatePreviewBtnUI();
+  }
+
+  // 1) 커스텀 음원 파일 재생 (HTML5 Audio 사용 - 모바일 환경 및 MP3 파일 100% 호환 보장)
+  if(type==='custom'){
+    try{
+      const custom=await idb('get','alarmSoundCustom');
+      if(custom && (custom.url || custom.buf)){
+        let audioSrc = custom.url;
+        if(!audioSrc && custom.buf){
+          try{
+            audioSrc = URL.createObjectURL(new Blob([custom.buf], { type: 'audio/mpeg' }));
+          }catch(be){}
+        }
+        if(audioSrc){
+          const audio = new Audio(audioSrc);
+          audio.volume = volScale;
+          audio.onended = () => { stopAlarmSound(); };
+          audio.onerror = (err) => {
+            console.warn('커스텀 음원 HTML5 Audio 재생 실패, 기본 사운드로 대체:', err);
+            playBuiltInSound('chime', volScale);
+          };
+          await audio.play();
+          customHtmlAudio = audio;
+          return;
+        }
+      }
+    }catch(err){
+      console.warn('커스텀 음원 로드 실패, 기본 사운드로 대체:', err);
+    }
+  }
+
+  // 2) 내장 사운드 (Web Audio API)
+  playBuiltInSound(type, volScale);
+}
+
+function playBuiltInSound(type, volScale){
   try{
     const AudioCtx=window.AudioContext||window.webkitAudioContext;
     if(!AudioCtx)return;
@@ -101,32 +164,6 @@ async function playAlarmSound(type, customVol, isPreview){
     masterGain.connect(ctx.destination);
     activeMasterGain=masterGain;
 
-    if(isPreview){
-      isPreviewPlaying=true;
-      updatePreviewBtnUI();
-    }
-
-    // 1) 커스텀 음원 파일 재생
-    if(type==='custom'){
-      const custom=await idb('get','alarmSoundCustom');
-      if(custom&&custom.buf){
-        try{
-          const audioBuffer=await ctx.decodeAudioData(custom.buf.slice(0));
-          const src=ctx.createBufferSource();
-          src.buffer=audioBuffer;
-          src.connect(masterGain);
-          src.onended=()=>{
-            if(activeAudioCtx===ctx)stopAlarmSound();
-          };
-          src.start(0);
-          curAudioNode=src;
-          activeSourceNodes=[src];
-          return;
-        }catch(err){console.warn('커스텀 음원 디코딩 실패, 기본 사운드로 대체',err)}
-      }
-    }
-
-    // 2) 내장 사운드 (Web Audio API)
     let totalDuration=0;
     if(type==='beep'){ // 디지털 시계 비프
       const beeps=[0, 0.15, 0.4, 0.55];

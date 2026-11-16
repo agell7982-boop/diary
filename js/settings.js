@@ -63,6 +63,7 @@ function setHTML(){
   const isVolModified=TEMP_VOL!==null&&TEMP_VOL!==(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
   const isSndModified=(TEMP_SND!==null&&TEMP_SND!==(S.cfg.alarmSound||'chime'))||isVolModified;
   const hasCustomAudio=!!S.cfg.customAudioName;
+  const dr=S.cfg.dailyRoutine||{enabled:false,time:'08:30',title:'하루 일정 조절 알림',msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝'};
 
   return `<div class="hd"><h1>설정</h1></div><div id="ls">
 
@@ -213,7 +214,34 @@ function setHTML(){
   </div>
 </div>
 
-<!-- 5. 글꼴 & 보기 설정 카드 -->
+<!-- 5. 하루 일정 조절 알림 (데일리 루틴) 카드 -->
+<div class="set-card">
+  <div class="set-card-head">
+    <div class="set-card-title"><span>📋 하루 일정 조절 알림</span></div>
+    <button class="ch${dr.enabled?' on':''}" data-a="drtog">${dr.enabled?'켜짐':'꺼짐'}</button>
+  </div>
+  <p class="set-card-desc">
+    매일 정해진 시간에 오늘의 일정을 확인하고 하루 계획을 조절할 수 있도록 알람과 메시지를 보내드립니다.
+  </p>
+  
+  <div class="set-col" style="margin-top:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <label class="mu" for="dr-time" style="font-size:13px;font-weight:500">알림 시간 설정</label>
+      <span style="font-size:13px;font-weight:600;color:var(--ac)">${fmtTime(dr.time)}</span>
+    </div>
+    <input id="dr-time" class="in" type="time" value="${dr.time||'08:30'}" aria-label="하루 일정 조절 알림 시간" style="margin-bottom:8px">
+
+    <label class="mu" for="dr-msg" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">알림 메시지 문구</label>
+    <input id="dr-msg" class="in" value="${esc(dr.msg||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝')}" placeholder="알림 메시지를 입력하세요" aria-label="알림 메시지" style="margin-bottom:10px">
+
+    <div class="rw" style="gap:6px">
+      <button class="ch" style="flex:1" data-a="drtest">⚡ 알림 미리보기</button>
+      <button class="ch on" style="flex:1" data-a="drsave">설정 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 6. 글꼴 & 보기 설정 카드 -->
 <div class="set-card">
   <div class="set-card-head">
     <div class="set-card-title"><span>🔤 글꼴 & 보기</span></div>
@@ -414,20 +442,59 @@ A.testbg=async()=>{
   },5000);
 };
 
+/* 하루 일정 조절 알림 (데일리 루틴) 액션 핸들러 */
+A.drtog=()=>{
+  if(!S.cfg.dailyRoutine) S.cfg.dailyRoutine={ enabled:false, time:'08:30', title:'하루 일정 조절 알림', msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝' };
+  S.cfg.dailyRoutine.enabled=!S.cfg.dailyRoutine.enabled;
+  save();
+  render();
+  toast(S.cfg.dailyRoutine.enabled ? '하루 일정 조절 알림이 켜졌어요 📋' : '하루 일정 조절 알림이 꺼졌어요');
+};
+
+A.drsave=()=>{
+  if(!S.cfg.dailyRoutine) S.cfg.dailyRoutine={ enabled:true, time:'08:30', title:'하루 일정 조절 알림', msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝' };
+  const t=$('dr-time')?.value||'08:30';
+  const m=($('dr-msg')?.value||'').trim()||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝';
+  S.cfg.dailyRoutine.time=t;
+  S.cfg.dailyRoutine.msg=m;
+  S.cfg.dailyRoutine.enabled=true;
+  save();
+  render();
+  toast(`매일 ${fmtTime(t)} 하루 일정 조절 알림이 설정되었어요 📋`);
+};
+
+A.drtest=()=>{
+  toast('2초 뒤 하루 일정 조절 알림이 울립니다 🔔');
+  setTimeout(()=>{
+    const dr=S.cfg.dailyRoutine||{ time:'08:30', title:'하루 일정 조절 알림', msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝' };
+    triggerDailyRoutineAlarm(dr);
+  }, 2000);
+};
+
 /* 커스텀 음원 파일 업로드 및 삭제 */
 const AF=document.createElement('input');AF.type='file';AF.accept='audio/*';AF.hidden=true;document.body.appendChild(AF);
 AF.onchange=async()=>{
   const f=AF.files[0];AF.value='';if(!f)return;
-  if(f.size>25*1024*1024){toast('25MB 이하의 음원 파일만 가능해요');return}
-  const buf=await f.arrayBuffer();
-  await idb('put','alarmSoundCustom',{buf,name:f.name});
-  S.cfg.customAudioName=f.name;
-  TEMP_SND='custom';
-  save();
-  render();
-  toast(`음원 [${f.name}]을 등록했어요! [알람 소리 저장]을 눌러주세요.`);
-  const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
-  playAlarmSound('custom',v);
+  if(f.size>35*1024*1024){toast('35MB 이하의 음원 파일만 가능해요');return}
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    try{
+      const dataUrl=reader.result;
+      await idb('put','alarmSoundCustom',{url:dataUrl,name:f.name});
+      S.cfg.customAudioName=f.name;
+      S.cfg.alarmSound='custom'; // 즉시 저장 반영
+      TEMP_SND='custom';
+      save();
+      render();
+      toast(`🎵 [${f.name}] 음악이 알람 소리로 등록 및 저장되었어요!`);
+      const v=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
+      playAlarmSound('custom',v,true);
+    }catch(e){
+      toast('음원 저장 중 오류가 발생했어요');
+    }
+  };
+  reader.onerror=()=>toast('음원 파일을 읽지 못했어요');
+  reader.readAsDataURL(f);
 };
 A.audp=()=>AF.click();
 A.audx=async()=>{

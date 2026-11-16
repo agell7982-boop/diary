@@ -25,6 +25,7 @@ const itemsToCopy = [
   'favicon.png',
   'icon-192.png',
   'icon-512.png',
+  'alarm_bell.wav',
   'css',
   'js'
 ];

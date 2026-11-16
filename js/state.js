@@ -63,14 +63,36 @@ let S = {
   skip: {},
   rdone: {},
   diary: {},
-  cfg: { lock: true, alarmSound: 'chime', alarmVol: 80, bgKeepAlive: true }
+  cfg: {
+    lock: true,
+    alarmSound: 'chime',
+    alarmVol: 80,
+    bgKeepAlive: true,
+    dailyRoutine: {
+      enabled: false,
+      time: '08:30',
+      title: '하루 일정 조절 알림',
+      msg: '오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝'
+    }
+  }
 };
 let DR = { title: '', time: null, alarm: null };
 
 function load() {
   try {
     const r = localStorage.getItem(KEY);
-    if (r) S = Object.assign(S, JSON.parse(r));
+    if (r) {
+      S = Object.assign(S, JSON.parse(r));
+      if (!S.cfg) S.cfg = {};
+      if (!S.cfg.dailyRoutine) {
+        S.cfg.dailyRoutine = {
+          enabled: false,
+          time: '08:30',
+          title: '하루 일정 조절 알림',
+          msg: '오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝'
+        };
+      }
+    }
   } catch(e) {}
 }
 
