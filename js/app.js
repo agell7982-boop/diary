@@ -40,6 +40,7 @@ A.tab=d=>{
 load();migGoals();applyCfg();render();wxLoad();syInit();
 setInterval(checkAlarms, 3000);
 setTimeout(checkAlarms, 500);
+setTimeout(()=>{ if(typeof checkForUpdates==='function') checkForUpdates(false); }, 2500);
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{

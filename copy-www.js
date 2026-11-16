@@ -21,6 +21,7 @@ function copyRecursive(src, dest) {
 const itemsToCopy = [
   'index.html',
   'manifest.json',
+  'version.json',
   'sw.js',
   'favicon.png',
   'icon-192.png',

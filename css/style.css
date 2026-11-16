@@ -96,3 +96,5 @@ textarea{font:inherit}
 .set-col{padding:10px 0;border-top:1px solid var(--ln)}
 .set-col:first-of-type{border-top:none;padding-top:2px}
 .set-tog-btn{width:100%;padding:10px;border:1px dashed var(--bd);border-radius:12px;color:var(--mu);font-size:13px;margin:10px 0;text-align:center;background:var(--bg)}
+.update-banner{background:color-mix(in srgb,var(--ac) 12%,var(--sf));border:1px solid color-mix(in srgb,var(--ac) 35%,var(--bd));border-radius:18px;padding:14px 16px;margin:10px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;animation:fadeInDown 0.3s ease}
+.update-btn-highlight{background:var(--ac)!important;color:#fff!important;font-weight:600;box-shadow:0 2px 8px color-mix(in srgb,var(--ac) 40%,transparent)}

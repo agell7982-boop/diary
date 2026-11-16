@@ -14,6 +14,111 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
+const APP_CURRENT_VERSION = '2.2.0';
+let UPDATE_STATUS = {
+  checked: false,
+  hasUpdate: false,
+  latestVersion: APP_CURRENT_VERSION,
+  buildDate: '2026-11-17',
+  notes: '',
+  apkUrl: 'https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk',
+  apkShortUrl: 'https://is.gd/mydiaryapk',
+  checking: false
+};
+
+function normalizeTimeInput(str){
+  if(!str)return '08:30';
+  let s=String(str).trim().replace(/\s+/g,'');
+  if(s.includes(':')){
+    const parts=s.split(':');
+    if(parts.length>=2){
+      const h=parseInt(parts[0],10);
+      const m=parseInt(parts[1],10);
+      if(!isNaN(h)&&!isNaN(m)&&h>=0&&h<=23&&m>=0&&m<=59){
+        return pad(h)+':'+pad(m);
+      }
+    }
+    return null;
+  }
+  if(/^\d{1,4}$/.test(s)){
+    if(s.length<=2){
+      const h=parseInt(s,10);
+      if(h>=0&&h<=23)return pad(h)+':00';
+    }else if(s.length===3){
+      const h=parseInt(s.slice(0,1),10);
+      const m=parseInt(s.slice(1),10);
+      if(h>=0&&h<=23&&m>=0&&m<=59)return pad(h)+':'+pad(m);
+    }else if(s.length===4){
+      const h=parseInt(s.slice(0,2),10);
+      const m=parseInt(s.slice(2),10);
+      if(h>=0&&h<=23&&m>=0&&m<=59)return pad(h)+':'+pad(m);
+    }
+  }
+  return null;
+}
+
+function isNewerVersion(remote,local){
+  if(!remote||!local)return false;
+  const r=String(remote).replace(/[^0-9.]/g,'').split('.').map(n=>parseInt(n,10)||0);
+  const l=String(local).replace(/[^0-9.]/g,'').split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(r.length,l.length);i++){
+    const rv=r[i]||0,lv=l[i]||0;
+    if(rv>lv)return true;
+    if(rv<lv)return false;
+  }
+  return false;
+}
+
+async function checkForUpdates(manual=false){
+  if(UPDATE_STATUS.checking)return;
+  UPDATE_STATUS.checking=true;
+  if(manual)render();
+
+  try{
+    const url='./version.json?_t='+Date.now();
+    let res=null;
+    try{
+      res=await fetch(url,{cache:'no-store'});
+    }catch(e){
+      try{
+        res=await fetch('https://raw.githubusercontent.com/agell7982-boop/diary/main/version.json?_t='+Date.now(),{cache:'no-store'});
+      }catch(err){}
+    }
+
+    if(res&&res.ok){
+      const data=await res.json();
+      if(data&&data.version){
+        UPDATE_STATUS.latestVersion=data.version;
+        UPDATE_STATUS.notes=data.releaseNotes||'';
+        UPDATE_STATUS.apkUrl=data.apkUrl||UPDATE_STATUS.apkUrl;
+        UPDATE_STATUS.apkShortUrl=data.apkShortUrl||UPDATE_STATUS.apkShortUrl;
+        UPDATE_STATUS.buildDate=data.buildDate||UPDATE_STATUS.buildDate;
+        UPDATE_STATUS.hasUpdate=isNewerVersion(data.version,APP_CURRENT_VERSION);
+      }
+    }
+
+    if('serviceWorker' in navigator&&window.SW_REG){
+      window.SW_REG.update().catch(()=>{});
+    }
+
+    UPDATE_STATUS.checked=true;
+    UPDATE_STATUS.checking=false;
+    render();
+
+    if(manual){
+      if(UPDATE_STATUS.hasUpdate){
+        toast(`🎉 새로운 버전(v${UPDATE_STATUS.latestVersion})이 있어요! [자동 업데이트]를 눌러주세요.`);
+      }else{
+        toast(`✅ 현재 최신 버전(v${APP_CURRENT_VERSION})을 사용 중입니다.`);
+      }
+    }
+  }catch(err){
+    UPDATE_STATUS.checking=false;
+    if(manual)toast('업데이트 확인 중 네트워크를 확인해 주세요.');
+    render();
+  }
+}
+
 function getActiveCfg(){return TEMP_CFG||S.cfg}
 const rgbOf=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const hex=c=>'#'+c.map(n=>pad(n.toString(16))).join('');
@@ -96,12 +201,43 @@ function setHTML(){
   </div>
 </div>
 
+<!-- 새 업데이트 알림 배너 (새 버전 감지 시 상단에 즉시 활성화) -->
+${UPDATE_STATUS.hasUpdate ? `
+  <div class="update-banner">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:18px">🚀</span>
+        <b style="font-size:14px;color:var(--tx)">새로운 버전(v${esc(UPDATE_STATUS.latestVersion)}) 업데이트</b>
+      </div>
+      <p class="mu" style="font-size:12px;margin:3px 0 0;line-height:1.4">${esc(UPDATE_STATUS.notes||'새로운 기능 및 안정화 패치가 준비되었어요.')}</p>
+    </div>
+    <button class="ch pr update-btn-highlight" data-a="applyupdate" style="flex:none;white-space:nowrap">지금 자동 업데이트</button>
+  </div>
+` : ''}
+
 <!-- 1. 계정 & 백업 카드 -->
 <div class="set-card${SET_SEC_OPEN.account?'':' closed'}">
-  ${secCardHead('account', '☁️ 계정 & 백업', 'Firebase 계정 로그인 및 클라우드 실시간 자동 동기화', SYMSG[SY.st]||(SY.user?esc(SY.user.displayName||SY.user.email):'로그인 필요'))}
+  ${secCardHead('account', '☁️ 계정 & 백업', 'Firebase 계정 로그인, 클라우드 동기화 및 앱 버전 업데이트', UPDATE_STATUS.hasUpdate ? `<b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)}</b>` : (SYMSG[SY.st]||(SY.user?esc(SY.user.displayName||SY.user.email):'로그인 필요')))}
   ${SET_SEC_OPEN.account ? `
     <div class="set-card-body">
       ${accCardHTML()}
+
+      <!-- 앱 버전 및 자동 업데이트 행 -->
+      <div class="set-row" style="margin-top:8px">
+        <div>
+          <div style="font-size:14px;font-weight:500">앱 버전 및 업데이트</div>
+          <div class="mu" style="font-size:12px;margin-top:2px">
+            현재 버전 v${APP_CURRENT_VERSION} ${UPDATE_STATUS.hasUpdate ? `· <b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)} 출시!</b>` : '· 최신 상태'}
+          </div>
+        </div>
+        <div class="rw" style="gap:6px">
+          ${UPDATE_STATUS.hasUpdate ? `
+            <button class="ch on update-btn-highlight" data-a="applyupdate" style="white-space:nowrap">🚀 자동 업데이트</button>
+          ` : `
+            <button class="ch" data-a="chkupdate" style="white-space:nowrap">${UPDATE_STATUS.checking ? '확인 중...' : '업데이트 확인'}</button>
+          `}
+        </div>
+      </div>
     </div>
   ` : ''}
 </div>
@@ -263,10 +399,11 @@ function setHTML(){
 
       <div class="set-col" style="margin-top:6px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <label class="mu" for="dr-time" style="font-size:13px;font-weight:500">알림 시간 설정</label>
+          <label class="mu" for="dr-time" style="font-size:13px;font-weight:500">알림 시간 직접 입력</label>
           <span style="font-size:13px;font-weight:600;color:var(--ac)">${fmtTime(dr.time)}</span>
         </div>
-        <input id="dr-time" class="in" type="time" value="${dr.time||'08:30'}" aria-label="하루 일정 조절 알림 시간" style="margin-bottom:8px">
+        <input id="dr-time" class="in" type="text" inputmode="numeric" placeholder="예: 08:30 또는 8:30" value="${esc(dr.time||'08:30')}" aria-label="하루 일정 조절 알림 시간" style="margin-bottom:4px">
+        <p class="mu" style="font-size:11px;margin:0 0 10px">💡 시계 팝업 없이 원하는 시간을 키보드로 적어주세요 (예: 08:30, 8:30, 14:00)</p>
 
         <label class="mu" for="dr-msg" style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">알림 메시지 문구</label>
         <input id="dr-msg" class="in" value="${esc(dr.msg||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝')}" placeholder="알림 메시지를 입력하세요" aria-label="알림 메시지" style="margin-bottom:10px">
@@ -584,6 +721,40 @@ A.testbg=async()=>{
   },5000);
 };
 
+/* 앱 버전 확인 및 자동 업데이트 액션 핸들러 */
+A.chkupdate=()=>{
+  checkForUpdates(true);
+};
+
+A.applyupdate=async()=>{
+  if(isNativeApp()){
+    toast('최신 안드로이드 APK 다운로드 페이지로 연결합니다 📥');
+    const dlUrl=UPDATE_STATUS.apkShortUrl||'https://is.gd/mydiaryapk';
+    try{
+      window.open(dlUrl,'_system');
+    }catch(e){
+      location.href=dlUrl;
+    }
+    return;
+  }
+
+  toast('최신 버전으로 자동 업데이트를 적용하고 새로고침합니다... 🔄');
+  try{
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    if('serviceWorker' in navigator&&window.SW_REG){
+      await window.SW_REG.unregister().catch(()=>{});
+    }
+  }catch(e){}
+
+  setTimeout(()=>{
+    const cleanUrl=window.location.origin+window.location.pathname+'?_upd='+Date.now();
+    window.location.replace(cleanUrl);
+  },600);
+};
+
 /* 하루 일정 조절 알림 (데일리 루틴) 액션 핸들러 */
 A.drtog=()=>{
   if(!S.cfg.dailyRoutine) S.cfg.dailyRoutine={ enabled:false, time:'08:30', title:'하루 일정 조절 알림', msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝' };
@@ -595,14 +766,20 @@ A.drtog=()=>{
 
 A.drsave=()=>{
   if(!S.cfg.dailyRoutine) S.cfg.dailyRoutine={ enabled:true, time:'08:30', title:'하루 일정 조절 알림', msg:'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝' };
-  const t=$('dr-time')?.value||'08:30';
+  const rawTime=($('dr-time')?.value||'').trim();
+  const normTime=normalizeTimeInput(rawTime);
+  if(!normTime){
+    toast('올바른 시간 형식으로 적어 주세요 (예: 08:30 또는 8:30)');
+    return;
+  }
   const m=($('dr-msg')?.value||'').trim()||'오늘의 일정을 확인하고 하루 계획을 조절해 보세요! 📝';
-  S.cfg.dailyRoutine.time=t;
+  S.cfg.dailyRoutine.time=normTime;
   S.cfg.dailyRoutine.msg=m;
   S.cfg.dailyRoutine.enabled=true;
   save();
+  if(typeof syncScheduledNotifications==='function') syncScheduledNotifications();
   render();
-  toast(`매일 ${fmtTime(t)} 하루 일정 조절 알림이 설정되었어요 📋`);
+  toast(`매일 ${fmtTime(normTime)} 하루 일정 조절 알림이 설정되었어요 📋`);
 };
 
 A.drtest=()=>{
