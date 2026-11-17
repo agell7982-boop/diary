@@ -1,5 +1,5 @@
-/* js/diary.js - [기록] 탭, 일기 저장 및 지난 일기 목록 모아보기 */
-let U=true,OPEN=new Set();
+/* js/diary.js - [기록] 탭, 암호화 잠금, 일기 저장 및 지난 일기 목록 모아보기 */
+let U=false,OPEN=new Set();
 let EDITING_DAY=null;
 
 function hasDiary(k){
@@ -9,7 +9,7 @@ function hasDiary(k){
 
 function lockHTML(){
   const has=!!S.cfg.pw;
-  return `<div class="hd"><h1>기록</h1></div><div class="lk"><p class="mu">${has?'비밀번호를 입력하면 열려요.':'처음이에요. 비밀번호를 정해 주세요. 일기는 기본적으로 잠겨요.'}</p><input id="pw" class="in" type="password" placeholder="비밀번호" autocomplete="off" aria-label="비밀번호">${has?'':'<input id="pw2" class="in" type="password" placeholder="한 번 더" autocomplete="off" aria-label="비밀번호 확인">'}<p class="mu" id="pwm" style="margin:0 0 8px"></p><button class="ch on" data-a="unlock">${has?'열기':'정하고 열기'}</button></div><div id="ls"></div>`;
+  return `<div class="hd"><h1>기록</h1></div><div class="lk"><p class="mu">${has?'비밀번호를 입력하면 열려요.':'처음이에요. 비밀번호를 정해 주세요. 일기는 기본적으로 잠겨요.'}</p><input id="pw" class="in" type="password" placeholder="비밀번호" autocomplete="off" aria-label="비밀번호">${has?'':'<input id="pw2" class="in" type="password" placeholder="한 번 더" autocomplete="off" aria-label="비밀번호 확인">'}<p class="mu" id="pwm" style="margin:0 0 8px"></p><button class="ch on" data-a="unlock">${has?'열기':'정하고 열기'}</button>${has?`<button class="ch" style="margin-top:14px;font-size:12px;border:none;background:none;color:var(--mu);text-decoration:underline;cursor:pointer" data-a="pwlost">비밀번호를 분실하셨나요?</button>`:''}</div><div id="ls"></div>`;
 }
 
 const phHTML=(a,canDelete=true)=>a&&a.length?`
@@ -189,6 +189,7 @@ function diaryListHTML(){
 }
 
 function recHTML(){
+  if(S.cfg.lock&&!U)return lockHTML();
   const d=dkey(sel),hn=holiday(sel),it=itemsOn(sel),dy=S.diary[sel]||{};
   const isSaved=hasDiary(sel);
   const isEditing=EDITING_DAY===sel||!isSaved;
@@ -244,7 +245,7 @@ function recHTML(){
       </div>
     `)
     + diaryListHTML()
-    + `</div>`;
+    + `<button class="ch" style="margin:16px 0 28px;width:100%" data-a="relock">🔒 일기장 지금 잠그기</button></div>`;
 }
 
 A.unlock=async()=>{
@@ -263,6 +264,15 @@ A.unlock=async()=>{
 };
 
 A.relock=()=>{U=false;EDITING_DAY=null;render();};
+A.pwlost=()=>{
+  if(confirm('비밀번호를 분실하셨나요?\n\n비밀번호를 초기화하고 일기장을 여시겠습니까?\n(작성된 일기와 사진 등 모든 데이터는 안전하게 유지됩니다)')){
+    S.cfg.pw=null;
+    save();
+    U=true;
+    render();
+    toast('비밀번호가 초기화되었습니다. [설정]에서 새 비밀번호를 등록해 주세요.');
+  }
+};
 A.rd=d=>{EDITING_DAY=null;setSel(shift(sel,+d.n));render();};
 const dayRec=()=>S.diary[sel]||(S.diary[sel]={text:'',photos:[]});
 const phArr=()=>{const y=dayRec();return y.photos||(y.photos=[]);};

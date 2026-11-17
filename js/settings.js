@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.5.1';
+const APP_CURRENT_VERSION = '2.5.2';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -248,7 +248,7 @@ function secCardHead(secId, title, summary, badgeText){
 
 function setHTML(){
   if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
-  const c=getActiveCfg();
+  const c=getActiveCfg(),has=!!S.cfg.pw;
   const isModified=JSON.stringify(TEMP_CFG)!==JSON.stringify(S.cfg);
   const curSound=TEMP_SND||S.cfg.alarmSound||'chime';
   const curVol=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
@@ -481,7 +481,7 @@ ${UPDATE_STATUS.hasUpdate ? `
 </div>
 
 <!-- 5. 글꼴 & 보기 설정 카드 -->
-<div class="set-card${SET_SEC_OPEN.font?'':' closed'}" style="margin-bottom:28px">
+<div class="set-card${SET_SEC_OPEN.font?'':' closed'}">
   ${secCardHead('font', '🔤 글꼴 & 보기 설정', '글자 크기 조절, 나만의 글꼴(TTF) 첨부, 12/24시간제 표기', `${S.cfg.fs||15}px · ${S.fmt12?'12시간제':'24시간제'}`)}
   ${SET_SEC_OPEN.font ? `
     <div class="set-card-body">
@@ -510,6 +510,46 @@ ${UPDATE_STATUS.hasUpdate ? `
           <div class="mu" style="font-size:12px">${S.fmt12?'오전/오후 12시간제':'24시간제'}</div>
         </div>
         <button class="ch on" data-a="fmt2">변경</button>
+      </div>
+    </div>
+  ` : ''}
+</div>
+
+<!-- 6. 일기 보안 & 비밀번호 카드 -->
+<div class="set-card${SET_SEC_OPEN.lock?'':' closed'}" style="margin-bottom:28px">
+  ${secCardHead('lock', '🔐 일기 보안 & 비밀번호', '비밀번호 설정 및 타인의 일기 열람 방지 잠금', S.cfg.lock ? '🔒 잠금 켜짐' : '🔓 잠금 꺼짐')}
+  ${SET_SEC_OPEN.lock ? `
+    <div class="set-card-body">
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px;font-weight:500">일기장 비밀번호 잠금</div>
+          <div class="mu" style="font-size:12px">${S.cfg.lock ? '기록 탭 진입 시 비밀번호를 입력해야 열려요.' : '비밀번호 없이 일기를 바로 볼 수 있어요.'}</div>
+        </div>
+        <button class="ch${S.cfg.lock?' on':''}" data-a="lockt">${S.cfg.lock?'잠금 켜짐':'잠금 꺼짐'}</button>
+      </div>
+
+      <div class="set-col">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px;font-weight:500">비밀번호 관리</div>
+            <div class="mu" style="font-size:12px">${has?'비밀번호 설정됨':'아직 설정되지 않음'}</div>
+          </div>
+          <button class="ch" data-a="pwtog">${PW_BOX_OPEN?'닫기':(has?'비밀번호 변경':'비밀번호 등록')}</button>
+        </div>
+        ${PW_BOX_OPEN ? `
+          <div style="margin-top:10px">
+            <input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호">
+            <input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호" style="margin-top:4px">
+            <button class="ch on" style="width:100%;margin-top:8px" data-a="chpw">비밀번호 저장</button>
+          </div>
+        ` : ''}
+      </div>
+
+      <div style="margin-top:12px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.5">
+        <b style="color:var(--tx)">💡 비밀번호 분실 시 안내:</b>
+        <p class="mu" style="margin:4px 0 0">
+          비밀번호를 분실하셨을 경우, 기록 잠금 화면의 [비밀번호를 분실하셨나요?]를 통해 안전하게 초기화 및 재설정하실 수 있습니다. 작성된 일기 데이터는 그대로 보존됩니다.
+        </p>
       </div>
     </div>
   ` : ''}

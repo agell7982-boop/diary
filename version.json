@@ -1,7 +1,7 @@
 {
-  "version": "2.5.1",
+  "version": "2.5.2",
   "buildDate": "2026-11-17",
-  "releaseNotes": "최신 APK 다운로드 시 외부 브라우저(크롬/삼성인터넷) 안전 연동, 웹뷰 외부 이동 및 멈춤 버그 완벽 해결",
+  "releaseNotes": "기록 비밀번호 잠금 복원 및 비밀번호 분실 시 안전 재설정 기능 추가",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

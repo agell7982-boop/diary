@@ -65,7 +65,7 @@ let S = {
   rdone: {},
   diary: {},
   cfg: {
-    lock: false,
+    lock: true,
     alarmSound: 'chime',
     alarmVol: 80,
     bgKeepAlive: true,
@@ -86,7 +86,7 @@ function load() {
       S = Object.assign(S, JSON.parse(r));
       if (!S.weather) S.weather = {};
       if (!S.cfg) S.cfg = {};
-      if (S.cfg.lock === undefined) S.cfg.lock = false;
+      if (S.cfg.lock === undefined) S.cfg.lock = true;
       if (!S.cfg.dailyRoutine) {
         S.cfg.dailyRoutine = {
           enabled: false,
