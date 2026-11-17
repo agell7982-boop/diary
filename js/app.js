@@ -22,7 +22,14 @@ function render(){
 }
 
 const TAB_STACK = [];
+let justSwipedUntil = 0;
+
 document.addEventListener('click', e => {
+  if (Date.now() < justSwipedUntil) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
   const aLink = e.target.closest('a[href^="http://"], a[href^="https://"]');
   if (aLink && isNativeApp()) {
     e.preventDefault();
@@ -34,6 +41,78 @@ document.addEventListener('click', e => {
   if (b.classList.contains('ov') && e.target !== b) return;
   if (A[b.dataset.a]) A[b.dataset.a](b.dataset);
 });
+
+// 좌우 스와이프(드래그) 제스처: 달력(다음달/이전달), 일정(다음주/이전주)
+(function initCalendarSwipe(){
+  let startX = 0, startY = 0, startTime = 0, isTracking = false;
+
+  document.addEventListener('touchstart', e => {
+    if (tab !== '일정' && tab !== '달력') return;
+    if (document.getElementById('photo-lightbox') ||
+        document.getElementById('update-modal') ||
+        document.getElementById('alarm-dialog') ||
+        (typeof T !== 'undefined' && T) ||
+        (typeof R !== 'undefined' && R) ||
+        (typeof DY !== 'undefined' && DY) ||
+        (typeof GS !== 'undefined' && GS) ||
+        (typeof SH !== 'undefined' && SH && SH.innerHTML.trim() !== '')) {
+      return;
+    }
+    if (e.target.closest('input, textarea, select, .wp, .wheel-picker, .tb')) {
+      return;
+    }
+    if (e.touches && e.touches[0]) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+      isTracking = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!isTracking) return;
+    isTracking = false;
+
+    if (tab !== '일정' && tab !== '달력') return;
+    if (document.getElementById('photo-lightbox') ||
+        document.getElementById('update-modal') ||
+        document.getElementById('alarm-dialog') ||
+        (typeof T !== 'undefined' && T) ||
+        (typeof R !== 'undefined' && R) ||
+        (typeof DY !== 'undefined' && DY) ||
+        (typeof GS !== 'undefined' && GS) ||
+        (typeof SH !== 'undefined' && SH && SH.innerHTML.trim() !== '')) {
+      return;
+    }
+
+    if (e.changedTouches && e.changedTouches[0]) {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const diffX = endX - startX;
+      const diffY = endY - startY;
+      const duration = Date.now() - startTime;
+      const absX = Math.abs(diffX);
+      const absY = Math.abs(diffY);
+
+      if (duration < 800 && absX >= 45 && absX > absY * 1.4) {
+        justSwipedUntil = Date.now() + 350;
+        if (tab === '달력') {
+          if (typeof A !== 'undefined' && A.mm) {
+            A.mm({ n: diffX < 0 ? 1 : -1 });
+          }
+        } else if (tab === '일정') {
+          if (typeof A !== 'undefined' && A.wk) {
+            A.wk({ n: diffX < 0 ? 1 : -1 });
+          }
+        }
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    isTracking = false;
+  }, { passive: true });
+})();
 A.tab=(d, fromBack=false)=>{
   DY=false;
   stopAlarmSound();
