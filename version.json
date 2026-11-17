@@ -1,7 +1,7 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "buildDate": "2026-11-17",
-  "releaseNotes": "설정 아코디언 UI, 시간 직접 입력(시계 제거), 원클릭 자동 업데이트 기능 추가",
+  "releaseNotes": "시간 직접 입력(:) 및 상하 드래그 휠 피커, 안드로이드 뒤로가기 앱 튕김 방지, 일기 저장 버튼 및 지난 일기 모아보기 목록 기능 추가",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

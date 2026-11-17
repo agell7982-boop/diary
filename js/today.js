@@ -79,6 +79,9 @@ function openSheet(id, mode){
     alarm: i ? i.alarm : DR.alarm,
     msg: ''
   };
+  try {
+    history.pushState({ overlay: 'sheet' }, '');
+  } catch(e) {}
   drawSheet();
 }
 
@@ -91,50 +94,214 @@ function closeSheet(){
   else { DY = false; GS = false; GE = null; }
 }
 
-function selHTML(){
-  const t = T.time, h = t ? +t.slice(0, 2) : '', m = t ? +t.slice(3) : 0;
-  const mo = [...Array(12).keys()].map(k => k * 5);
-  if (t && !mo.includes(m)) { mo.push(m); mo.sort((a, b) => a - b); }
-  const mm = `<select id="q-m" class="in" aria-label="분">${mo.map(x => `<option value="${x}"${x===m?' selected':''}>${pad(x)}분</option>`).join('')}</select>`;
+function wheelPickerHTML(){
+  const t = T ? T.time : null;
+  const curH = t ? +t.slice(0, 2) : 9;
+  const curM = t ? +t.slice(3) : 0;
+  
+  let hList = [];
   if (S.fmt12) {
-    const pm = h !== '' && h >= 12;
-    return `<select id="q-a" class="in" aria-label="오전 오후"><option value="0"${pm?'':' selected'}>오전</option><option value="1"${pm?' selected':''}>오후</option></select><select id="q-h" class="in" aria-label="시"><option value="">시</option>${[...Array(12).keys()].map(k => { const v = k + 1; return `<option value="${v}"${h!==''&&(h%12||12)===v?' selected':''}>${v}시</option>`; }).join('')}</select>${mm}`;
+    hList = [...Array(12).keys()].map(k => k + 1);
+  } else {
+    hList = [...Array(24).keys()];
   }
-  return `<select id="q-h" class="in" aria-label="시"><option value="">시</option>${[...Array(24).keys()].map(k => `<option value="${k}"${h===k?' selected':''}>${k}시</option>`).join('')}</select>${mm}`;
+  const mList = [...Array(60).keys()];
+
+  const dispH = S.fmt12 ? (curH % 12 || 12) : curH;
+  const isPm = S.fmt12 && curH >= 12;
+
+  return `
+    <div class="time-input-box">
+      ${S.fmt12 ? `<button type="button" class="ch" id="btn-ampm" style="padding:4px 10px;font-size:13px;font-weight:600">${isPm?'오후':'오전'}</button>` : ''}
+      <input type="text" id="time-h-in" inputmode="numeric" maxlength="2" value="${t !== null ? pad(dispH) : ''}" placeholder="${pad(dispH)}" aria-label="시 직접 입력">
+      <span class="time-colon">:</span>
+      <input type="text" id="time-m-in" inputmode="numeric" maxlength="2" value="${t !== null ? pad(curM) : ''}" placeholder="${pad(curM)}" aria-label="분 직접 입력">
+      <button type="button" class="ch${t===null?' on':''}" id="btn-allday" style="font-size:12px;padding:4px 8px;margin-left:6px">${t===null?'종일 일정':'시간 해제'}</button>
+    </div>
+    <div class="wheel-picker-wrap">
+      <div class="wheel-highlight"></div>
+      <div class="wheel-col" id="wheel-h" aria-label="시 선택">
+        ${hList.map(h => `<div class="wheel-item${h === dispH ? ' active' : ''}" data-val="${h}">${pad(h)}시</div>`).join('')}
+      </div>
+      <div class="wheel-sep">:</div>
+      <div class="wheel-col" id="wheel-m" aria-label="분 선택">
+        ${mList.map(m => `<div class="wheel-item${m === curM ? ' active' : ''}" data-val="${m}">${pad(m)}분</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+let isWheelSyncing = false;
+
+function initWheelPicker(){
+  const wh = document.getElementById('wheel-h');
+  const wm = document.getElementById('wheel-m');
+  const inH = document.getElementById('time-h-in');
+  const inM = document.getElementById('time-m-in');
+  const btnAmpm = document.getElementById('btn-ampm');
+  const btnAllDay = document.getElementById('btn-allday');
+  if (!wh || !wm) return;
+
+  const ITEM_H = 40;
+  const t = T ? T.time : null;
+  const curH = t ? +t.slice(0, 2) : 9;
+  const curM = t ? +t.slice(3) : 0;
+  let dispH = S.fmt12 ? (curH % 12 || 12) : curH;
+  let isPm = S.fmt12 && curH >= 12;
+
+  const hIdx = S.fmt12 ? (dispH - 1) : dispH;
+  wh.scrollTop = Math.max(0, hIdx * ITEM_H);
+  wm.scrollTop = Math.max(0, curM * ITEM_H);
+
+  const updateActiveItems = () => {
+    if (!T) return;
+    const curHIdx = Math.max(0, Math.min(wh.children.length - 1, Math.round(wh.scrollTop / ITEM_H)));
+    const curMIdx = Math.max(0, Math.min(wm.children.length - 1, Math.round(wm.scrollTop / ITEM_H)));
+
+    Array.from(wh.children).forEach((el, idx) => el.classList.toggle('active', idx === curHIdx));
+    Array.from(wm.children).forEach((el, idx) => el.classList.toggle('active', idx === curMIdx));
+
+    const selH = +wh.children[curHIdx].dataset.val;
+    const selM = +wm.children[curMIdx].dataset.val;
+
+    let finalH = selH;
+    if (S.fmt12) {
+      finalH = (selH % 12) + (isPm ? 12 : 0);
+    }
+    T.time = pad(finalH) + ':' + pad(selM);
+    T.msg = '';
+
+    if (inH && document.activeElement !== inH) inH.value = pad(selH);
+    if (inM && document.activeElement !== inM) inM.value = pad(selM);
+
+    const almSel = document.getElementById('q-l');
+    if (almSel) almSel.disabled = false;
+    if (btnAllDay) {
+      btnAllDay.classList.remove('on');
+      btnAllDay.textContent = '시간 해제';
+    }
+  };
+
+  let scrollTimeoutH = null;
+  wh.addEventListener('scroll', () => {
+    if (isWheelSyncing) return;
+    clearTimeout(scrollTimeoutH);
+    scrollTimeoutH = setTimeout(updateActiveItems, 50);
+  }, { passive: true });
+
+  let scrollTimeoutM = null;
+  wm.addEventListener('scroll', () => {
+    if (isWheelSyncing) return;
+    clearTimeout(scrollTimeoutM);
+    scrollTimeoutM = setTimeout(updateActiveItems, 50);
+  }, { passive: true });
+
+  wh.addEventListener('click', e => {
+    const item = e.target.closest('.wheel-item');
+    if (item) {
+      const idx = Array.from(wh.children).indexOf(item);
+      wh.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+    }
+  });
+
+  wm.addEventListener('click', e => {
+    const item = e.target.closest('.wheel-item');
+    if (item) {
+      const idx = Array.from(wm.children).indexOf(item);
+      wm.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+    }
+  });
+
+  if (inH) {
+    inH.addEventListener('input', () => {
+      let val = inH.value.replace(/\D/g, '');
+      if (val.length > 2) val = val.slice(-2);
+      inH.value = val;
+      let hNum = parseInt(val, 10);
+      if (!isNaN(hNum)) {
+        if (S.fmt12) {
+          if (hNum > 12) hNum = 12;
+          if (hNum < 1) hNum = 1;
+          const idx = hNum - 1;
+          isWheelSyncing = true;
+          wh.scrollTop = idx * ITEM_H;
+          isWheelSyncing = false;
+        } else {
+          if (hNum > 23) hNum = 23;
+          isWheelSyncing = true;
+          wh.scrollTop = hNum * ITEM_H;
+          isWheelSyncing = false;
+        }
+        updateActiveItems();
+      }
+    });
+  }
+
+  if (inM) {
+    inM.addEventListener('input', () => {
+      let val = inM.value.replace(/\D/g, '');
+      if (val.length > 2) val = val.slice(-2);
+      inM.value = val;
+      let mNum = parseInt(val, 10);
+      if (!isNaN(mNum)) {
+        if (mNum > 59) mNum = 59;
+        isWheelSyncing = true;
+        wm.scrollTop = mNum * ITEM_H;
+        isWheelSyncing = false;
+        updateActiveItems();
+      }
+    });
+  }
+
+  if (btnAmpm) {
+    btnAmpm.addEventListener('click', () => {
+      isPm = !isPm;
+      btnAmpm.textContent = isPm ? '오후' : '오전';
+      updateActiveItems();
+    });
+  }
+
+  if (btnAllDay) {
+    btnAllDay.addEventListener('click', () => {
+      if (!T) return;
+      if (T.time === null) {
+        updateActiveItems();
+      } else {
+        T.time = null;
+        T.alarm = null;
+        if (inH) inH.value = '';
+        if (inM) inM.value = '';
+        btnAllDay.classList.add('on');
+        btnAllDay.textContent = '종일 일정';
+        const almSel = document.getElementById('q-l');
+        if (almSel) { almSel.value = ''; almSel.disabled = true; }
+        toast('종일 일정(시간 없음)으로 설정되었어요');
+      }
+    });
+  }
 }
 
 function drawSheet(){
   if (!SH) return;
   SH.innerHTML = `<div class="ov" data-a="ovx"><div class="sh" role="dialog" aria-modal="true" aria-label="시간과 알람">`
     + (T.full ? `${S.reps.length?'<p class="mu" style="margin:0 0 4px">반복 틀</p><div class="rw" style="flex-wrap:wrap">'+S.reps.map(r=>`<button class="ch" data-a="tpl" data-id="${r.id}">${esc(r.title)}</button>`).join('')+'</div>':''}<label class="mu" for="q-t">제목</label><input id="q-t" class="in" value="${esc(T.title)}"><label class="mu" for="q-d">자세히 쓰기</label><textarea id="q-d" class="in" rows="5" placeholder="이 일정에 대해 자유롭게 적어 보세요">${esc(T.detail)}</textarea>` : '')
-    + `<label class="mu" for="q-x">시간 (직접 쓰기)</label><input id="q-x" class="in" value="${T.time?fmtTime(T.time):''}" placeholder="예: 7:30, 오후 7시 30분"><div class="rw">${selHTML()}</div>`
-    + `<p class="mu" style="margin:4px 0 8px">${T.msg||'비워 두면 종일 일정이에요.'}</p><div class="rw"><button class="ch" data-a="fmt">${S.fmt12?'오전·오후 표기':'24시간 표기'}</button></div>`
+    + `<label class="mu">시간 설정 (직접 쓰거나 위아래로 드래그)</label>`
+    + wheelPickerHTML()
+    + `<div class="rw" style="margin-bottom:8px"><button class="ch" data-a="fmt">${S.fmt12?'오전·오후 표기':'24시간 표기'}</button></div>`
     + `<label class="mu" for="q-l">알람</label><select id="q-l" class="in"${T.time?'':' disabled'}>${ALARMS.map(([v, l]) => `<option value="${v===null?'':v}"${T.alarm===v?' selected':''}>${l}</option>`).join('')}</select>`
     + `<p class="mu" style="margin:4px 0 8px">설정한 시간에 소리와 알림창으로 알려드려요.</p>`
     + `<div class="rw">${T.id?'<button class="ch" style="color:var(--no)" data-a="del">삭제</button>':''}<button class="ch pr" data-a="ok">완료</button></div></div></div>`;
+
+  requestAnimationFrame(() => {
+    initWheelPicker();
+  });
 }
 
 if (SH) {
   SH.addEventListener('change', e => {
     if (!T) return;
     const i = e.target.id;
-    if (i === 'q-x') {
-      const v = e.target.value.trim();
-      if (!v) { T.time = null; T.msg = ''; }
-      else { const p = parseTime(v); if (p) { T.time = p; T.msg = ''; } else T.msg = '시간을 이해하지 못했어요. 예: 7:30, 오후 7시 30분'; }
-      if (T.time === null) T.alarm = null;
-      drawSheet();
-    } else if (i === 'q-h' || i === 'q-m' || i === 'q-a') {
-      const hv = $('q-h').value;
-      if (hv === '') { T.time = null; T.alarm = null; }
-      else {
-        let h = +hv;
-        if (S.fmt12) h = (h % 12) + (+$('q-a').value ? 12 : 0);
-        T.time = pad(h) + ':' + pad(+$('q-m').value);
-        T.msg = '';
-      }
-      drawSheet();
-    } else if (i === 'q-l') T.alarm = e.target.value === '' ? null : +e.target.value;
+    if (i === 'q-l') T.alarm = e.target.value === '' ? null : +e.target.value;
     else if (i === 'q-t') T.title = e.target.value;
     else if (i === 'q-d') T.detail = e.target.value;
   });

@@ -61,6 +61,60 @@ if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isPlug
   });
 }
 
+// 안드로이드 네이티브 및 브라우저 뒤로가기(Back Button) 제어
+function closeTopOverlay(){
+  const alm = document.getElementById('alarm-dialog');
+  if(alm){
+    alm.remove();
+    stopAlarmSound();
+    return true;
+  }
+  if(T || (typeof SH !== 'undefined' && SH && SH.innerHTML.trim() !== '')){
+    closeSheet();
+    return true;
+  }
+  if(typeof R !== 'undefined' && R){
+    closeSheet();
+    return true;
+  }
+  if(typeof DY !== 'undefined' && DY){
+    DY = false;
+    render();
+    return true;
+  }
+  if(typeof GS !== 'undefined' && GS){
+    if(typeof closeGoalSheet === 'function') closeGoalSheet();
+    return true;
+  }
+  return false;
+}
+
+let lastBackPress = 0;
+if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App && typeof window.Capacitor.Plugins.App.addListener === 'function') {
+  window.Capacitor.Plugins.App.addListener('backButton', () => {
+    if (closeTopOverlay()) {
+      return;
+    }
+    if (tab !== '일정') {
+      A.tab({ t: '일정' });
+      return;
+    }
+    const now = Date.now();
+    if (now - lastBackPress < 2000) {
+      if (typeof window.Capacitor.Plugins.App.exitApp === 'function') {
+        window.Capacitor.Plugins.App.exitApp();
+      }
+    } else {
+      lastBackPress = now;
+      toast('한 번 더 누르면 앱이 종료됩니다');
+    }
+  });
+}
+
+window.addEventListener('popstate', () => {
+  closeTopOverlay();
+});
+
 window.addEventListener('focus', checkAlarms);
 window.addEventListener('pageshow', checkAlarms);
 document.addEventListener('visibilitychange', ()=>{
