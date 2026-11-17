@@ -226,15 +226,18 @@ async function syPull() {
       const rm = mt.data(), cur = jst(splitS().meta), was = M.last._meta;
       if (was !== undefined && cur === was) {
         if ((rm.u || 0) > (M.u._meta || 0)) {
-          S.reps = rm.reps || []; S.cfg = Object.assign({ lock: true }, rm.cfg); S.fmt12 = !rm.fmt12; changed = true;
+          S.reps = rm.reps || [];
+          if (rm.cfg) S.cfg = Object.assign(S.cfg, rm.cfg);
+          if (rm.fmt12 !== undefined) S.fmt12 = rm.fmt12;
+          changed = true;
         }
       } else if (wasEmpty) {
-        S.reps = rm.reps || []; S.cfg = Object.assign({ lock: true }, rm.cfg); S.fmt12 = !rm.fmt12; changed = true;
-      } else {
-        const ri = new Set(S.reps.map(x => x.id));
-        (rm.reps || []).forEach(x => { if (!ri.has(x.id)) S.reps.push(x); });
+        S.reps = rm.reps || [];
+        if (rm.cfg) S.cfg = Object.assign(S.cfg, rm.cfg);
+        if (rm.fmt12 !== undefined) S.fmt12 = rm.fmt12;
         changed = true;
       }
+      // cur !== was: 로컬에서 사용자가 반복 일정을 삭제/추가/수정한 상태이므로 원격 데이터로 덮어쓰지 않고 로컬 변경사항을 보존함
       M.last._meta = jst(mstrip(rm));
       M.u._meta = rm.u || 0;
     }

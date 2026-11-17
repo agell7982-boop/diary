@@ -1,7 +1,7 @@
 {
-  "version": "2.5.2",
+  "version": "2.5.3",
   "buildDate": "2026-11-17",
-  "releaseNotes": "기록 비밀번호 잠금 복원 및 비밀번호 분실 시 안전 재설정 기능 추가",
+  "releaseNotes": "기록 상단 중복 수정 버튼 제거, 반복 설정 화면 삭제 버튼 추가, 요일 선택 개선, 선택 메뉴 검은색 제거(테마 컬러 적용), 반복 삭제 후 부활 버그 완벽 수정",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

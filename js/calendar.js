@@ -150,33 +150,111 @@ function drawRep(){
   if (!SH || !R) return;
   const L = R.mode === 'list';
   SH.innerHTML = `<div class="ov" data-a="ovx"><div class="sh" role="dialog" aria-modal="true" aria-label="반복 일정">` + (L ?
-    (S.reps.map(r => `<div class="r"><button class="rb" data-a="redit" data-id="${r.id}"><span class="mu tm">${fmtTime(r.time)}</span><span class="ti">${esc(r.title)}</span><span class="mu">${r.detail?'메모 ':''}${r.alarm!==null&&r.alarm!==undefined?'⏰ ':''}${rdays(r)}</span></button><button class="rd" data-a="rdel" data-id="${r.id}">삭제</button></div>`).join('') || '<p class="mu">아직 반복 틀이 없어요.</p>') + `<p class="mu">반복 일정은 일정 화면 아래에 날짜별로 나와요. 틀을 누르면 수정해요.</p><div class="rw"><button class="ch on" data-a="rnew">＋ 새 반복</button></div>`
-    : `<label class="mu" for="r-t">내용</label><input id="r-t" class="in" value="${esc(R.title)}"><label class="mu" for="r-x">시간 (비우면 종일)</label><input id="r-x" class="in" value="${R.time?fmtTime(R.time):''}" placeholder="예: 7:30, 오후 7시 30분"><p class="mu" id="r-m" style="margin:0 0 8px">${R.msg||''}</p><label class="mu" for="r-l">알람</label><select id="r-l" class="in"${R.time?'':' disabled'}>${ALARMS.map(([v, l]) => `<option value="${v===null?'':v}"${R.alarm===v?' selected':''}>${l}</option>`).join('')}</select><p class="mu" style="margin:4px 0 8px">반복 일정 당일 설정한 시간에 소리와 알림창으로 알려드려요.</p><div class="rw"><button class="ch${R.kind==='wd'?' on':''}" data-a="rkind" data-v="wd">요일마다</button><button class="ch${R.kind==='every'?' on':''}" data-a="rkind" data-v="every">며칠마다</button></div>`
-    + (R.kind === 'wd' ? `<div class="rw" style="flex-wrap:wrap;margin-top:8px">${[0,1,2,3,4,5,6].map(i => `<button class="ch${R.days.includes(i)?' on':''}" data-a="rday" data-d="${i}">${WD[i]}</button>`).join('')}</div>` : `<label class="mu" for="r-n">몇 일에 한 번</label><input id="r-n" class="in" type="number" min="1" max="365" value="${R.every}">`)
-    + `<label class="mu" for="r-s">시작일</label><input id="r-s" class="in" type="date" value="${R.start}"><label class="mu" for="r-d">자세히 (선택)</label><textarea id="r-d" class="in" rows="3">${esc(R.detail)}</textarea><div class="rw" style="margin-top:12px"><button class="ch" data-a="rback">목록</button><button class="ch on" style="margin-left:auto" data-a="rsave">저장</button></div>`) + `</div></div>`;
+    (S.reps.map(r => `<div class="r"><button type="button" class="rb" data-a="redit" data-id="${r.id}"><span class="mu tm">${fmtTime(r.time)}</span><span class="ti">${esc(r.title)}</span><span class="mu">${r.detail?'메모 ':''}${r.alarm!==null&&r.alarm!==undefined?'⏰ ':''}${rdays(r)}</span></button><button type="button" class="rd" data-a="rdel" data-id="${r.id}">삭제</button></div>`).join('') || '<p class="mu">아직 반복 일정이 없어요.</p>') + `<p class="mu" style="font-size:12px;margin:8px 0 14px">반복 일정은 일정 화면 아래에 날짜별로 표시됩니다. 목록을 누르면 바로 수정/삭제할 수 있어요.</p><div class="rw"><button type="button" class="ch on" data-a="rnew">＋ 새 반복 추가</button></div>`
+    : `<label class="mu" for="r-t">내용</label><input id="r-t" class="in" value="${esc(R.title)}" placeholder="반복할 일정 제목 (예: 독서, 운동)">`
+    + `<label class="mu" for="r-x">시간 (비우면 종일)</label><input id="r-x" class="in" value="${R.time?fmtTime(R.time):''}" placeholder="예: 7:30, 오후 7시 30분"><p class="mu" id="r-m" style="margin:0 0 8px">${R.msg||''}</p>`
+    + `<label class="mu" for="r-l">알람</label><select id="r-l" class="in"${R.time?'':' disabled'}>${ALARMS.map(([v, l]) => `<option value="${v===null?'':v}"${R.alarm===v?' selected':''}>${l}</option>`).join('')}</select><p class="mu" style="margin:4px 0 8px">반복 일정 당일 설정한 시간에 소리와 알림창으로 알려드려요.</p>`
+    + `<div class="rw" style="margin-bottom:6px"><button type="button" class="ch${R.kind==='wd'?' on':''}" data-a="rkind" data-v="wd">요일마다</button><button type="button" class="ch${R.kind==='every'?' on':''}" data-a="rkind" data-v="every">며칠마다</button></div>`
+    + (R.kind === 'wd' ? `<div class="rw" style="flex-wrap:wrap;gap:6px;margin:8px 0 12px">${[0,1,2,3,4,5,6].map(i => `<button type="button" class="ch${(R.days||[]).map(Number).includes(i)?' on':''}" data-a="rday" data-d="${i}" style="min-width:38px;padding:0 10px">${WD[i]}</button>`).join('')}</div>` : `<label class="mu" for="r-n">몇 일에 한 번</label><input id="r-n" class="in" type="number" min="1" max="365" value="${R.every}">`)
+    + `<label class="mu" for="r-s">시작일</label><input id="r-s" class="in" type="date" value="${R.start}"><label class="mu" for="r-d">자세히 쓰기 (선택)</label><textarea id="r-d" class="in" rows="3" placeholder="메모할 내용이 있다면 적어보세요">${esc(R.detail||'')}</textarea>`
+    + `<div class="rw" style="margin-top:14px;align-items:center"><button type="button" class="ch" data-a="rback">목록</button>${R.id ? `<button type="button" class="ch" style="color:var(--no);border-color:color-mix(in srgb,var(--no) 40%,var(--bd))" data-a="rdelcur" data-id="${R.id}">반복 삭제</button>` : ''}<button type="button" class="ch on" style="margin-left:auto" data-a="rsave">저장</button></div>`) + `</div></div>`;
 }
 
 A.rp = () => { R = { mode: 'list' }; drawRep(); };
 A.rnew = () => { R = { mode: 'edit', id: null, title: '', time: null, alarm: null, kind: 'wd', days: [0, 1, 2, 3, 4, 5, 6], every: 2, start: ymd(new Date()), detail: '', msg: '' }; drawRep(); };
 A.redit = d => {
-  const r = S.reps.find(x => x.id === d.id);
+  const r = S.reps.find(x => String(x.id) === String(d.id));
   if (!r) return;
-  R = { mode: 'edit', id: r.id, title: r.title, time: r.time, alarm: r.alarm !== undefined ? r.alarm : null, kind: r.kind || 'wd', days: [...(r.days || [])], every: r.every || 2, start: r.start, detail: r.detail || '', msg: '' };
+  R = {
+    mode: 'edit',
+    id: r.id,
+    title: r.title || '',
+    time: r.time,
+    alarm: r.alarm !== undefined ? r.alarm : null,
+    kind: r.kind || 'wd',
+    days: Array.isArray(r.days) ? r.days.map(Number) : [0, 1, 2, 3, 4, 5, 6],
+    every: r.every || 2,
+    start: r.start || ymd(new Date()),
+    detail: r.detail || '',
+    msg: ''
+  };
   drawRep();
 };
-A.rdel = d => { S.reps = S.reps.filter(x => x.id !== d.id); save(); drawRep(); render(); };
-A.rkind = d => { if (R) { R.kind = d.v; drawRep(); } };
+A.rdel = d => {
+  const targetId = d.id;
+  if (!targetId) return;
+  S.reps = S.reps.filter(x => String(x.id) !== String(targetId));
+  save();
+  drawRep();
+  render();
+  toast('반복 일정을 삭제했어요');
+};
+A.rdelcur = d => {
+  const targetId = (d && d.id) || (R && R.id);
+  if (!targetId) return;
+  if (!confirm('이 반복 일정을 삭제하시겠습니까?')) return;
+  S.reps = S.reps.filter(x => String(x.id) !== String(targetId));
+  R = null;
+  save();
+  closeSheet();
+  render();
+  toast('반복 일정을 삭제했어요');
+};
+A.rkind = d => {
+  if (!R) return;
+  const tEl = $('r-t'); if (tEl) R.title = tEl.value;
+  const xEl = $('r-x'); if (xEl) {
+    const v = xEl.value.trim();
+    R.time = v ? parseTime(v) : null;
+  }
+  const nEl = $('r-n'); if (nEl) R.every = Math.floor(+nEl.value);
+  const sEl = $('r-s'); if (sEl) R.start = sEl.value;
+  const dEl = $('r-d'); if (dEl) R.detail = dEl.value;
+  const lEl = $('r-l'); if (lEl) R.alarm = lEl.value === '' ? null : +lEl.value;
+  R.kind = d.v;
+  drawRep();
+};
 A.rday = d => {
   if (!R) return;
-  const i = +d.d, k = R.days.indexOf(i);
-  k < 0 ? R.days.push(i) : R.days.splice(k, 1);
-  drawRep();
+  const tEl = $('r-t'); if (tEl) R.title = tEl.value;
+  const xEl = $('r-x'); if (xEl) {
+    const v = xEl.value.trim();
+    R.time = v ? parseTime(v) : null;
+  }
+  const nEl = $('r-n'); if (nEl) R.every = Math.floor(+nEl.value);
+  const sEl = $('r-s'); if (sEl) R.start = sEl.value;
+  const dEl = $('r-d'); if (dEl) R.detail = dEl.value;
+  const lEl = $('r-l'); if (lEl) R.alarm = lEl.value === '' ? null : +lEl.value;
+
+  if (!Array.isArray(R.days)) R.days = [];
+  R.days = R.days.map(Number);
+  const i = Number(d.d);
+  const k = R.days.indexOf(i);
+  if (k < 0) {
+    R.days.push(i);
+  } else {
+    R.days.splice(k, 1);
+  }
+  R.days.sort((a, b) => a - b);
+
+  const btn = SH ? SH.querySelector(`[data-a="rday"][data-d="${i}"]`) : null;
+  if (btn) {
+    if (R.days.includes(i)) {
+      btn.classList.add('on');
+    } else {
+      btn.classList.remove('on');
+    }
+  } else {
+    drawRep();
+  }
 };
 A.rback = () => { R = { mode: 'list' }; drawRep(); };
 A.rtg = d => { const k = sel + '|' + d.id; S.rdone[k] ? delete S.rdone[k] : S.rdone[k] = 1; save(); render(); };
 A.rsave = () => {
   if (!R) return;
   const g = id => { const e = $(id); return e ? e.value : null; };
+  const tVal = g('r-t'); if (tVal !== null) R.title = tVal;
+  const dVal = g('r-d'); if (dVal !== null) R.detail = dVal;
   const x = g('r-x');
   if (x !== null) {
     const v = x.trim(), p = v ? parseTime(v) : null;
@@ -189,15 +267,20 @@ A.rsave = () => {
   if (!R.time) R.alarm = null;
   if (g('r-n') !== null) R.every = Math.floor(+g('r-n'));
   if (g('r-s')) R.start = g('r-s');
-  const bad = !R.title.trim() ? '내용을 적어 주세요.' : R.kind === 'wd' && !R.days.length ? '요일을 하나 이상 골라 주세요.' : R.kind === 'every' && !(R.every >= 1) ? '1 이상의 숫자를 적어 주세요.' : !R.start ? '시작일을 골라 주세요.' : '';
+  const bad = !R.title.trim() ? '내용을 적어 주세요.' : R.kind === 'wd' && (!R.days || !R.days.length) ? '요일을 하나 이상 골라 주세요.' : R.kind === 'every' && !(R.every >= 1) ? '1 이상의 숫자를 적어 주세요.' : !R.start ? '시작일을 골라 주세요.' : '';
   if (bad) { rerr(bad); return; }
   if (R.alarm !== null) {
     if (typeof requestAlarmPermission === 'function') requestAlarmPermission();
     else if ("Notification" in window && Notification.permission === 'default') Notification.requestPermission();
   }
-  const o = { title: R.title.trim(), time: R.time, alarm: R.alarm, kind: R.kind, days: [...R.days].sort(), every: R.every, start: R.start, detail: R.detail };
-  if (R.id) Object.assign(S.reps.find(x => x.id === R.id), o);
-  else S.reps.push(Object.assign({ id: uid() }, o));
+  const o = { title: R.title.trim(), time: R.time, alarm: R.alarm, kind: R.kind, days: [...(R.days||[])].map(Number).sort((a,b)=>a-b), every: R.every, start: R.start, detail: R.detail };
+  if (R.id) {
+    const existing = S.reps.find(x => String(x.id) === String(R.id));
+    if (existing) Object.assign(existing, o);
+  } else {
+    S.reps.push(Object.assign({ id: uid() }, o));
+  }
+  R = null;
   save(); closeSheet(); render(); toast('반복 일정을 저장했어요');
 };
 A.tpl = d => {

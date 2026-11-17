@@ -42,7 +42,7 @@ h1{font-weight:300;font-size:26px;margin:0}
 .in{width:100%;min-height:44px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);padding:0 12px;margin:4px 0 8px}
 .rw{display:flex;gap:8px}.rw .in{flex:1}
 .ch{border:1px solid var(--bd);border-radius:22px;padding:0 16px}
-.pr{background:var(--tx);color:var(--bg);margin-left:auto}
+.pr{background:var(--ac);color:#fff;border-color:var(--ac);margin-left:auto}
 #toast{z-index:50;position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap}
 #toast.on{opacity:1}
 textarea.in{padding:10px 12px;line-height:1.7;resize:vertical}
@@ -64,7 +64,7 @@ textarea.in{padding:10px 12px;line-height:1.7;resize:vertical}
 .mp{margin-top:16px;border-top:1px solid var(--ln);padding-top:12px}
 .mr{display:flex;gap:4px;margin:8px 0}.mm{font-size:22px;min-width:44px;border-radius:22px;opacity:.4}.mm.on{opacity:1;background:var(--ln)}
 textarea{font:inherit}
-.ch.on{background:var(--tx);color:var(--bg)}
+.ch.on{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important;box-shadow:0 2px 6px color-mix(in srgb,var(--ac) 30%,transparent)}
 .st{margin:20px 0 6px;font-weight:500}
 .cp{border:1px solid var(--bd);border-radius:14px;padding:10px 14px;margin:6px 0;background:var(--sf)}
 .cp label{display:flex;align-items:center;gap:8px}.cp .rg{flex:1}.cp .rn{width:76px;flex:none;margin:2px 0}

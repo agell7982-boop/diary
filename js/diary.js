@@ -203,18 +203,15 @@ function recHTML(){
     + (!isEditing ? `
       <!-- 읽기 전용 모드 -->
       <div class="rc" style="background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:10px 0 16px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-          <div style="flex:1;min-width:0;padding-right:10px">
-            <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${WD[d.getDay()]}요일${curWx?' · '+esc(curWx):''}</span>
-            <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--tx);line-height:1.4">${esc(dy.title || '(제목 없음)')}</h2>
-          </div>
-          <button class="ch pr" data-a="dyedit" style="flex:none;white-space:nowrap;padding:6px 12px;font-size:13px">✏️ 일기 수정</button>
+        <div style="margin-bottom:10px">
+          <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${WD[d.getDay()]}요일${curWx?' · '+esc(curWx):''}</span>
+          <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--tx);line-height:1.4">${esc(dy.title || '(제목 없음)')}</h2>
         </div>
         <div style="font-size:14px;line-height:1.75;color:var(--tx);white-space:pre-wrap;margin:12px 0;min-height:50px">${esc(dy.text || '(작성된 내용이 없습니다)')}</div>
         ${phHTML(dy.photos, false)}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid var(--bd)">
           <button class="tx mu" style="font-size:12px;color:var(--no)" data-a="dydel" data-d="${sel}">일기 삭제</button>
-          <button class="ch" data-a="dyedit">✏️ 수정하기</button>
+          <button class="ch on" data-a="dyedit">✏️ 수정하기</button>
         </div>
       </div>
     ` : `
