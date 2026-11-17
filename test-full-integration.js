@@ -339,6 +339,7 @@ async function runTest() {
   console.log('\n=======================================');
   console.log('ALL INTEGRATION TESTS PASSED 100%!');
   console.log('=======================================');
+  process.exit(0);
 }
 
 runTest().catch(e => {
