@@ -144,8 +144,16 @@ textarea{font:inherit}
 .cal-diary-icon{font-size:10px;line-height:1;margin-left:2px;vertical-align:middle;display:inline-block}
 .today-diary-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,var(--sf));border:1px solid color-mix(in srgb,var(--ac) 30%,var(--bd));border-radius:10px;padding:4px 10px;margin-left:8px;cursor:pointer}
 
-/* 사진 확대 라이트박스 뷰어 */
-.photo-lightbox-ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;touch-action:none}
-.photo-lightbox-img{max-width:94vw;max-height:82vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
-.photo-lightbox-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);color:#fff;border:none;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.photo-lightbox-counter{color:#fff;font-size:13px;margin-top:12px;font-weight:500;letter-spacing:1px}
+/* 사진 확대 라이트박스 뷰어 (좌우 스와이프 & 네비게이션) */
+.photo-lightbox-ov{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;touch-action:pan-y}
+.photo-lightbox-img{max-width:92vw;max-height:76vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);transition:opacity 0.15s ease,transform 0.15s ease;user-select:none;-webkit-user-drag:none}
+.photo-lightbox-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.22);color:#fff;border:none;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:background 0.15s ease}
+.photo-lightbox-close:hover{background:rgba(255,255,255,0.4)}
+.photo-lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.22);color:#fff;border:none;font-size:28px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:background 0.15s ease,transform 0.1s ease}
+.photo-lightbox-nav:active{transform:translateY(-50%) scale(0.92)}
+.photo-lightbox-prev{left:14px}
+.photo-lightbox-next{right:14px}
+.photo-lightbox-counter{color:#fff;font-size:13px;margin-top:12px;font-weight:600;letter-spacing:1px}
+.photo-lightbox-dots{display:flex;gap:6px;align-items:center;margin-top:8px}
+.photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.35);transition:all 0.2s ease}
+.photo-dot.active{width:18px;border-radius:4px;background:#fff}

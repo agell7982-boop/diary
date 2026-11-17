@@ -23,26 +23,114 @@ const phHTML=(a,canDelete=true)=>a&&a.length?`
   </div>
 `:'';
 
+let CURRENT_PHOTO_IDX = 0;
+
+function updateLightboxPhoto(newIdx){
+  const photos=phArr();
+  if(!photos||!photos.length)return;
+  if(newIdx<0) newIdx=photos.length-1;
+  else if(newIdx>=photos.length) newIdx=0;
+  CURRENT_PHOTO_IDX=newIdx;
+
+  const imgEl=document.getElementById('photo-lb-img');
+  const countEl=document.getElementById('photo-lb-counter');
+  const dotsEl=document.getElementById('photo-lb-dots');
+
+  if(imgEl){
+    imgEl.style.opacity='0.2';
+    imgEl.style.transform='scale(0.96)';
+    setTimeout(()=>{
+      imgEl.src=photos[CURRENT_PHOTO_IDX];
+      imgEl.style.opacity='1';
+      imgEl.style.transform='scale(1)';
+    },100);
+  }
+  if(countEl){
+    countEl.textContent=`${CURRENT_PHOTO_IDX+1} / ${photos.length}`;
+  }
+  if(dotsEl){
+    dotsEl.innerHTML=photos.map((_,i)=>`<span class="photo-dot${i===CURRENT_PHOTO_IDX?' active':''}"></span>`).join('');
+  }
+}
+
 function showPhotoLightbox(idx){
   const photos=phArr();
   if(!photos||!photos[idx])return;
+  CURRENT_PHOTO_IDX=idx;
   const exist=document.getElementById('photo-lightbox');
   if(exist)exist.remove();
 
   const div=document.createElement('div');
   div.id='photo-lightbox';
   div.className='photo-lightbox-ov';
+  const hasMultiple=photos.length>1;
+
   div.innerHTML=`
     <button class="photo-lightbox-close" data-a="closephoto" aria-label="닫기">✕</button>
-    <img class="photo-lightbox-img" src="${photos[idx]}" alt="확대 사진">
-    <div class="photo-lightbox-counter">${idx+1} / ${photos.length}</div>
+    ${hasMultiple ? `
+      <button class="photo-lightbox-nav photo-lightbox-prev" data-a="phprev" aria-label="이전 사진">‹</button>
+      <button class="photo-lightbox-nav photo-lightbox-next" data-a="phnext" aria-label="다음 사진">›</button>
+    ` : ''}
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;max-width:100%;max-height:76vh">
+      <img id="photo-lb-img" class="photo-lightbox-img" src="${photos[idx]}" alt="확대 사진">
+    </div>
+    <div id="photo-lb-counter" class="photo-lightbox-counter">${idx+1} / ${photos.length}</div>
+    ${hasMultiple ? `
+      <div id="photo-lb-dots" class="photo-lightbox-dots">
+        ${photos.map((_,i)=>`<span class="photo-dot${i===idx?' active':''}"></span>`).join('')}
+      </div>
+      <p style="color:rgba(255,255,255,0.6);font-size:11px;margin:6px 0 0">👈 손가락으로 좌우 쓸어 넘겨보세요 👉</p>
+    ` : ''}
   `;
-  div.addEventListener('click',e=>{
+
+  // 터치 스와이프 제스처 이벤트
+  let startX=0, startY=0, isMoving=false;
+  div.addEventListener('touchstart', e=>{
+    if(e.touches&&e.touches[0]){
+      startX=e.touches[0].clientX;
+      startY=e.touches[0].clientY;
+      isMoving=false;
+    }
+  }, {passive:true});
+
+  div.addEventListener('touchmove', e=>{
+    if(e.touches&&e.touches[0]){
+      const diffX=e.touches[0].clientX-startX;
+      const diffY=e.touches[0].clientY-startY;
+      if(Math.abs(diffX)>Math.abs(diffY)){
+        isMoving=true;
+      }
+    }
+  }, {passive:true});
+
+  div.addEventListener('touchend', e=>{
+    if(e.changedTouches&&e.changedTouches[0]){
+      const endX=e.changedTouches[0].clientX;
+      const endY=e.changedTouches[0].clientY;
+      const diffX=endX-startX;
+      const diffY=endY-startY;
+      if(Math.abs(diffX)>35 && Math.abs(diffX)>Math.abs(diffY)){
+        if(diffX<0){
+          // 왼쪽으로 스와이프 -> 다음 사진
+          updateLightboxPhoto(CURRENT_PHOTO_IDX+1);
+        }else{
+          // 오른쪽으로 스와이프 -> 이전 사진
+          updateLightboxPhoto(CURRENT_PHOTO_IDX-1);
+        }
+      }
+    }
+  }, {passive:true});
+
+  div.addEventListener('click', e=>{
     if(e.target.id==='photo-lightbox'||e.target.classList.contains('photo-lightbox-close')){
       closePhotoLightbox();
     }
   });
+
   document.body.appendChild(div);
+  try{
+    history.pushState({ modal:'photo' }, '');
+  }catch(e){}
 }
 
 function closePhotoLightbox(){
@@ -52,6 +140,8 @@ function closePhotoLightbox(){
 }
 A.closephoto=closePhotoLightbox;
 A.phview=d=>showPhotoLightbox(+d.n);
+A.phprev=()=>updateLightboxPhoto(CURRENT_PHOTO_IDX-1);
+A.phnext=()=>updateLightboxPhoto(CURRENT_PHOTO_IDX+1);
 
 function diaryListHTML(){
   const dates=Object.keys(S.diary||{}).filter(k=>hasDiary(k));
@@ -272,6 +362,12 @@ A.dydel=d=>{
 
 document.addEventListener('keydown',e=>{
   if((e.target.id==='pw'||e.target.id==='pw2')&&e.key==='Enter') A.unlock();
+  const lb=document.getElementById('photo-lightbox');
+  if(lb){
+    if(e.key==='ArrowLeft') A.phprev();
+    else if(e.key==='ArrowRight') A.phnext();
+    else if(e.key==='Escape') closePhotoLightbox();
+  }
 });
 
 document.addEventListener('input',e=>{

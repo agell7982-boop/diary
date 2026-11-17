@@ -1,7 +1,7 @@
 {
-  "version": "2.4.2",
+  "version": "2.4.3",
   "buildDate": "2026-11-17",
-  "releaseNotes": "@capacitor/app 플러그인 탑재로 뒤로가기 앱 튕김 완전 해결, 날씨 초고속 연동 및 cleartext 허용, 일정 헤더 일기작성됨 텍스트 배지 제거, 날짜 선택 시 검은색 대신 은은한 파스텔 테마 강조 디자인 적용",
+  "releaseNotes": "사진 확대 뷰어 좌우 스와이프 제스처 및 이전/다음 네비게이션 버튼 연동, 키보드 화살표 키 지원",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }
