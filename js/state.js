@@ -236,27 +236,103 @@ function holiday(k) { return holidaysOf(+k.slice(0, 4))[k] || null; }
 function isRed(k) { return new Date(k + 'T12:00:00').getDay() === 0 || !!holiday(k); }
 function isSat(k) { return new Date(k + 'T12:00:00').getDay() === 6; }
 
-// 7. 실시간 날씨 연동
-const WX = { lat: 36.274, lon: 127.249, data: {}, state: 'idle' };
-const WIC = c => c === 0 ? '☀️' : c <= 2 ? '🌤️' : c === 3 ? '☁️' : c <= 48 ? '🌫️' : c <= 57 ? '🌦️' : c <= 67 ? '🌧️' : c <= 77 ? '🌨️' : c <= 82 ? '🌧️' : c <= 86 ? '🌨️' : '⛈️';
-async function wxLoad() {
-  if (WX.state !== 'idle') return;
-  WX.state = 'load';
+// 7. 실시간 날씨 연동 (wttr.in 초고속 연동 & 로컬 캐싱)
+const WX_CACHE_KEY = 'diary.weather.cache';
+function loadWeatherCache(){
   try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WX.lat}&longitude=${WX.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&past_days=7&forecast_days=14`);
-    const j = await r.json();
-    j.daily.time.forEach((d, i) => WX.data[d] = {
-      c: j.daily.weathercode[i],
-      hi: Math.round(j.daily.temperature_2m_max[i]),
-      lo: Math.round(j.daily.temperature_2m_min[i])
-    });
-    WX.state = 'ok';
+    const raw = localStorage.getItem(WX_CACHE_KEY);
+    if(raw) return JSON.parse(raw);
+  } catch(e){}
+  return {};
+}
+const WX = { lat: 37.5665, lon: 126.9780, data: loadWeatherCache(), state: 'idle' };
+
+function getWttrIcon(code, desc){
+  const d = String(desc || '').toLowerCase();
+  const c = +code || 113;
+  if(c >= 386 || c === 200 || d.includes('thunder')) return '⛈️';
+  if(c >= 323 || c >= 227 || d.includes('snow') || d.includes('blizzard') || d.includes('sleet')) return '🌨️';
+  if(c >= 263 || c >= 176 || d.includes('rain') || d.includes('drizzle') || d.includes('shower')) return '🌧️';
+  if(c === 143 || c === 248 || c === 260 || d.includes('fog') || d.includes('mist')) return '🌫️';
+  if(c === 119 || c === 122 || d.includes('overcast') || d.includes('cloudy')) return '☁️';
+  if(c === 116 || d.includes('partly')) return '🌤️';
+  return '☀️';
+}
+
+async function wxLoad() {
+  if (WX.state === 'load') return;
+  WX.state = 'load';
+
+  let success = false;
+  // 1순위: wttr.in (초고속 한국 날씨)
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch('https://wttr.in/Seoul?format=j1', { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (res && res.ok) {
+      const j = await res.json();
+      if (j && j.weather && Array.isArray(j.weather)) {
+        j.weather.forEach(day => {
+          const d = day.date;
+          const hi = Math.round(+day.maxtempC);
+          const lo = Math.round(+day.mintempC);
+          const hItem = (day.hourly && (day.hourly[4] || day.hourly[0])) || {};
+          const code = hItem.weatherCode;
+          const desc = hItem.weatherDesc && hItem.weatherDesc[0] ? hItem.weatherDesc[0].value : '';
+          WX.data[d] = {
+            icon: getWttrIcon(code, desc),
+            hi,
+            lo
+          };
+        });
+        success = true;
+      }
+    }
   } catch(e) {
-    WX.state = 'fail';
+    console.warn('wttr.in fetch failed:', e);
   }
+
+  // 2순위: open-meteo 폴백
+  if (!success) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 6000);
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&past_days=3&forecast_days=7`, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (r && r.ok) {
+        const j = await r.json();
+        const WIC = c => c === 0 ? '☀️' : c <= 2 ? '🌤️' : c === 3 ? '☁️' : c <= 48 ? '🌫️' : c <= 57 ? '🌦️' : c <= 67 ? '🌧️' : c <= 77 ? '🌨️' : c <= 82 ? '🌧️' : c <= 86 ? '🌨️' : '⛈️';
+        j.daily.time.forEach((d, i) => {
+          WX.data[d] = {
+            icon: WIC(j.daily.weather_code[i]),
+            hi: Math.round(j.daily.temperature_2m_max[i]),
+            lo: Math.round(j.daily.temperature_2m_min[i])
+          };
+        });
+        success = true;
+      }
+    } catch(err) {
+      console.warn('open-meteo fallback failed:', err);
+    }
+  }
+
+  if (success) {
+    WX.state = 'ok';
+    try {
+      localStorage.setItem(WX_CACHE_KEY, JSON.stringify(WX.data));
+    } catch(e){}
+  } else {
+    WX.state = Object.keys(WX.data).length ? 'ok' : 'fail';
+  }
+
   if (typeof render === 'function' && !T && !R) render();
 }
-function wxS(k) { const w = WX.data[k]; return w ? `${WIC(w.c)} ${w.hi}°/${w.lo}°` : WX.state === 'fail' ? '날씨 연동 예정' : ''; }
+
+function wxS(k) {
+  const w = WX.data[k];
+  return w ? `${w.icon} ${w.hi}°/${w.lo}°` : '';
+}
 const wxT = k => wxS(k) ? ' · ' + wxS(k) : '';
 
 // 8. 전역 모달 상태

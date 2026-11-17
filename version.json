@@ -1,7 +1,7 @@
 {
-  "version": "2.4.0",
+  "version": "2.4.1",
   "buildDate": "2026-11-17",
-  "releaseNotes": "사진 3~5장 다중 첨부 및 확대 뷰어, 일기 제목 목록 간소화 & 읽기/수정 모드 분리, 달력/일정 일기 작성(📝) 기호 표시, 뒤로가기 화면 복귀 강화 및 설정 업데이트 버튼 통합",
+  "releaseNotes": "실시간 날씨 연동 개선 (wttr.in 초고속 연동 & 로컬 캐싱), 업데이트 모달 터치 먹통 및 자동 팝업 방지, 뒤로가기 모달 닫기 연동 강화",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

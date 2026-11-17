@@ -22,7 +22,10 @@ function render(){
 }
 
 const TAB_STACK = [];
-app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]');
+  if (b && A[b.dataset.a]) A[b.dataset.a](b.dataset);
+});
 A.tab=(d, fromBack=false)=>{
   DY=false;
   stopAlarmSound();

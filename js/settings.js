@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.4.0';
+const APP_CURRENT_VERSION = '2.4.1';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -80,9 +80,9 @@ function showUpdateModal(ver, notes, isCurrent=false){
   const div=document.createElement('div');
   div.id='update-modal';
   div.className='ov';
-  div.style.zIndex='99';
+  div.style.zIndex='99999';
   div.innerHTML=`
-    <div class="sh" style="text-align:center;padding:24px 20px">
+    <div class="sh" style="text-align:center;padding:24px 20px" role="dialog" aria-modal="true">
       <div style="font-size:44px;margin:0 auto 10px;line-height:1">🚀</div>
       <b style="font-size:18px;display:block;margin-bottom:4px;color:var(--tx)">
         ${isCurrent ? '현재 최신 버전을 사용 중입니다' : '새로운 업데이트가 있습니다!'}
@@ -91,17 +91,43 @@ function showUpdateModal(ver, notes, isCurrent=false){
         버전: <b>v${esc(ver)}</b> ${isCurrent ? '(최신 상태)' : `(현재 설치: v${APP_CURRENT_VERSION})`}
       </p>
       <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.55;text-align:left;margin-bottom:16px;white-space:pre-wrap;color:var(--tx)">
-        ${esc(notes || '새로운 기능과 성능 개선이 포함되어 있습니다.')}
+        ${esc(notes || '새로운 기능과 안정화 패치가 준비되어 있습니다.')}
       </div>
       <div class="rw" style="gap:8px">
-        <button class="ch pr update-btn-highlight" style="flex:1" data-a="applyupdate">
+        <button id="btn-upd-apply" class="ch pr update-btn-highlight" style="flex:1" data-a="applyupdate">
           ${isCurrent ? (isNativeApp() ? '최신 APK 다시 받기 📥' : '최신 버전 새로고침 🔄') : (isNativeApp() ? '지금 APK 다운로드 📥' : '지금 즉시 업데이트 🚀')}
         </button>
-        <button class="ch" data-a="closeupdmodal">닫기</button>
+        <button id="btn-upd-close" class="ch" data-a="closeupdmodal">닫기</button>
       </div>
     </div>
   `;
+
+  // 직접 이벤트 리스너 바인딩 (이벤트 위임 실패 100% 방지)
+  const applyBtn = div.querySelector('#btn-upd-apply');
+  if (applyBtn) {
+    applyBtn.onclick = (e) => {
+      e.stopPropagation();
+      A.applyupdate();
+    };
+  }
+  const closeBtn = div.querySelector('#btn-upd-close');
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      A.closeupdmodal();
+    };
+  }
+  // 모달 바깥 어두운 배경 터치 시 닫기
+  div.onclick = (e) => {
+    if (e.target.id === 'update-modal') {
+      A.closeupdmodal();
+    }
+  };
+
   document.body.appendChild(div);
+  try {
+    history.pushState({ modal: 'update' }, '');
+  } catch(e) {}
 }
 
 async function checkForUpdates(manual=false){
@@ -145,15 +171,12 @@ async function checkForUpdates(manual=false){
     UPDATE_STATUS.checking=false;
     render();
 
+    // 사용자가 직접 확인 버튼을 눌렀을 때만 모달 팝업을 띄움 (자동 체크 시 강제 팝업 방지)
     if(manual){
       if(UPDATE_STATUS.hasUpdate){
         showUpdateModal(UPDATE_STATUS.latestVersion,UPDATE_STATUS.notes,false);
       }else{
         showUpdateModal(APP_CURRENT_VERSION,'현재 최신 버전을 이용 중입니다.\n필요하신 경우 최신 안드로이드 설치 파일(APK)을 다시 다운로드할 수 있습니다.',true);
-      }
-    }else{
-      if(UPDATE_STATUS.hasUpdate){
-        showUpdateModal(UPDATE_STATUS.latestVersion,UPDATE_STATUS.notes,false);
       }
     }
   }catch(err){
@@ -769,30 +792,29 @@ A.chkupdate=()=>{
 A.applyupdate=()=>{
   const modal=document.getElementById('update-modal');
   if(modal)modal.remove();
+
   if(isNativeApp()){
     toast('최신 안드로이드 APK 다운로드를 시작합니다 📥');
     const dlUrl=UPDATE_STATUS.apkShortUrl||SHORT_APK_URL;
     const rawApk=UPDATE_STATUS.apkUrl||GITHUB_APK_URL;
+
     try{
       const a=document.createElement('a');
       a.href=rawApk;
       a.download='diary-debug.apk';
-      a.target='_blank';
+      a.target='_system';
       document.body.appendChild(a);
       a.click();
       setTimeout(()=>a.remove(),1000);
     }catch(e){}
+
     setTimeout(()=>{
       try{
-        if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App){
-          window.open(dlUrl,'_system');
-        }else{
-          window.location.href=dlUrl;
-        }
+        window.open(dlUrl,'_system');
       }catch(err){
-        window.location.href=dlUrl;
+        try{ window.location.href=dlUrl; }catch(e){}
       }
-    },400);
+    },300);
     return;
   }
 
@@ -809,7 +831,7 @@ A.applyupdate=()=>{
   setTimeout(()=>{
     const cleanUrl=window.location.origin+window.location.pathname+'?_upd='+Date.now();
     window.location.replace(cleanUrl);
-  },600);
+  },500);
 };
 
 A.closeupdmodal=()=>{
