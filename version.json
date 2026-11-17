@@ -1,7 +1,7 @@
 {
-  "version": "2.4.1",
+  "version": "2.4.2",
   "buildDate": "2026-11-17",
-  "releaseNotes": "실시간 날씨 연동 개선 (wttr.in 초고속 연동 & 로컬 캐싱), 업데이트 모달 터치 먹통 및 자동 팝업 방지, 뒤로가기 모달 닫기 연동 강화",
+  "releaseNotes": "@capacitor/app 플러그인 탑재로 뒤로가기 앱 튕김 완전 해결, 날씨 초고속 연동 및 cleartext 허용, 일정 헤더 일기작성됨 텍스트 배지 제거, 날짜 선택 시 검은색 대신 은은한 파스텔 테마 강조 디자인 적용",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

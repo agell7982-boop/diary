@@ -14,8 +14,7 @@ function weekDays(){
 
 function headHTML(){
   const d = dkey(sel), home = sel === ymd(new Date()) && wk === 0, hn = holiday(sel);
-  const hasD = typeof hasDiary === 'function' ? hasDiary(sel) : (S.diary && S.diary[sel] && ((S.diary[sel].title && S.diary[sel].title.trim()) || (S.diary[sel].text && S.diary[sel].text.trim()) || (S.diary[sel].photos && S.diary[sel].photos.length > 0)));
-  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${wxT(sel)}</p><div style="display:flex;align-items:center"><h1 style="margin:0">${d.getMonth()+1}월 ${d.getDate()}일</h1>${hasD ? '<button class="today-diary-badge" data-a="gorec" title="이 날 작성된 일기 읽기">📝 일기 작성됨</button>' : ''}</div></div><div>${home?'':'<button class="tx" data-a="today">오늘</button>'}<button class="nv" data-a="wk" data-n="-1" aria-label="지난주">‹</button><button class="nv" data-a="wk" data-n="1" aria-label="다음주">›</button></div></div>`;
+  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${wxT(sel)}</p><h1 style="margin:0">${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div>${home?'':'<button class="tx" data-a="today">오늘</button>'}<button class="nv" data-a="wk" data-n="-1" aria-label="지난주">‹</button><button class="nv" data-a="wk" data-n="1" aria-label="다음주">›</button></div></div>`;
 }
 
 function weekHTML(){

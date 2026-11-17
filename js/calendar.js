@@ -28,8 +28,7 @@ function monthHTML(){
 
 function dayPanelHTML(){
   const d = dkey(sel), hn = holiday(sel);
-  const hasD = typeof hasDiary === 'function' ? hasDiary(sel) : (S.diary && S.diary[sel] && ((S.diary[sel].title && S.diary[sel].title.trim()) || (S.diary[sel].text && S.diary[sel].text.trim()) || (S.diary[sel].photos && S.diary[sel].photos.length > 0)));
-  return `<div class="mp"><div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}</p><div style="display:flex;align-items:center"><b style="font-size:18px;font-weight:500">${d.getMonth()+1}월 ${d.getDate()}일</b>${hasD ? '<button class="today-diary-badge" data-a="gorec" title="이 날 작성된 일기 읽기">📝 일기 작성됨 ›</button>' : ''}</div></div><span class="mu">${wxS(sel)}</span></div><div class="mr">${MOODS.map(e => `<button class="mm${S.moods[sel]===e?' on':''}" data-a="mood" data-m="${e}" aria-label="기분 ${e}">${e}</button>`).join('')}</div>${goalDoneHTML()}${listHTML()}<button class="ch" style="margin:8px 0 16px" data-a="new">＋ 일정 추가</button></div>`;
+  return `<div class="mp"><div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}</p><b style="font-size:18px;font-weight:500">${d.getMonth()+1}월 ${d.getDate()}일</b></div><span class="mu">${wxS(sel)}</span></div><div class="mr">${MOODS.map(e => `<button class="mm${S.moods[sel]===e?' on':''}" data-a="mood" data-m="${e}" aria-label="기분 ${e}">${e}</button>`).join('')}</div>${goalDoneHTML()}${listHTML()}<button class="ch" style="margin:8px 0 16px" data-a="new">＋ 일정 추가</button></div>`;
 }
 
 function calHTML(){
