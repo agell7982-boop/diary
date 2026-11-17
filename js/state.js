@@ -124,6 +124,30 @@ function isNativeApp() {
   return window.location.protocol === 'capacitor:' || (window.location.hostname === 'localhost' && window.location.port === '');
 }
 
+async function openExternalUrl(url) {
+  if (!url) return;
+  if (isNativeApp() && window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Browser')) {
+    try {
+      await window.Capacitor.Plugins.Browser.open({ url });
+      return true;
+    } catch (e) {
+      console.warn('Capacitor Browser plugin error:', e);
+    }
+  }
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 500);
+    return true;
+  } catch (e) {
+    try { window.open(url, '_blank'); } catch(err) {}
+  }
+}
+
 const hash = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dg' + s)))].map(b => b.toString(16).padStart(2, '0')).join('');
 
 function itemsOn(d) {

@@ -1,7 +1,7 @@
 {
-  "version": "2.5.0",
+  "version": "2.5.1",
   "buildDate": "2026-11-17",
-  "releaseNotes": "일기 암호화 잠금 해제, 일정 추가 화면 터치 튕김 수정, 날씨 영구 저장 및 일기 날씨 연동",
+  "releaseNotes": "최신 APK 다운로드 시 외부 브라우저(크롬/삼성인터넷) 안전 연동, 웹뷰 외부 이동 및 멈춤 버그 완벽 해결",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

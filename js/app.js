@@ -23,6 +23,12 @@ function render(){
 
 const TAB_STACK = [];
 document.addEventListener('click', e => {
+  const aLink = e.target.closest('a[href^="http://"], a[href^="https://"]');
+  if (aLink && isNativeApp()) {
+    e.preventDefault();
+    openExternalUrl(aLink.href);
+    return;
+  }
   const b = e.target.closest('[data-a]');
   if (!b) return;
   if (b.classList.contains('ov') && e.target !== b) return;

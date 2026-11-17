@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.5.0';
+const APP_CURRENT_VERSION = '2.5.1';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -91,7 +91,7 @@ function showUpdateModal(ver, notes, isCurrent=false){
         버전: <b>v${esc(ver)}</b> ${isCurrent ? '(최신 상태)' : `(현재 설치: v${APP_CURRENT_VERSION})`}
       </p>
       <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.55;text-align:left;margin-bottom:16px;white-space:pre-wrap;color:var(--tx)">
-        ${esc(notes || '새로운 기능과 안정화 패치가 준비되어 있습니다.')}
+        ${esc(notes || '새로운 기능과 안정화 패치가 준비되어 있습니다.')}${isNativeApp() ? '\n\n💡 [APK 다운로드]를 누르면 스마트폰 기본 인터넷 브라우저(크롬 또는 삼성 인터넷)로 안전하게 다운로드가 진행됩니다. 다운로드가 완료되면 상단 알림창을 눌러 설치해 주세요.' : ''}
       </div>
       <div class="rw" style="gap:8px">
         <button id="btn-upd-apply" class="ch pr update-btn-highlight" style="flex:1" data-a="applyupdate">
@@ -278,7 +278,7 @@ ${UPDATE_STATUS.hasUpdate ? `
       </div>
       <p class="mu" style="font-size:12px;margin:3px 0 0;line-height:1.4">${esc(UPDATE_STATUS.notes||'새로운 기능 및 안정화 패치가 준비되었어요.')}</p>
     </div>
-    <button class="ch pr update-btn-highlight" data-a="applyupdate" style="flex:none;white-space:nowrap">지금 자동 업데이트</button>
+    <button class="ch pr update-btn-highlight" data-a="applyupdate" style="flex:none;white-space:nowrap">${isNativeApp() ? '지금 APK 다운로드' : '지금 자동 업데이트'}</button>
   </div>
 ` : ''}
 
@@ -756,32 +756,17 @@ A.chkupdate=()=>{
   checkForUpdates(true);
 };
 
-A.applyupdate=()=>{
+A.applyupdate=async()=>{
   const modal=document.getElementById('update-modal');
   if(modal)modal.remove();
 
   if(isNativeApp()){
-    toast('최신 안드로이드 APK 다운로드를 시작합니다 📥');
+    toast('기본 브라우저에서 최신 APK 다운로드를 시작합니다 📥');
     const dlUrl=UPDATE_STATUS.apkShortUrl||SHORT_APK_URL;
-    const rawApk=UPDATE_STATUS.apkUrl||GITHUB_APK_URL;
-
-    try{
-      const a=document.createElement('a');
-      a.href=rawApk;
-      a.download='diary-debug.apk';
-      a.target='_system';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>a.remove(),1000);
-    }catch(e){}
-
+    await openExternalUrl(dlUrl);
     setTimeout(()=>{
-      try{
-        window.open(dlUrl,'_system');
-      }catch(err){
-        try{ window.location.href=dlUrl; }catch(e){}
-      }
-    },300);
+      toast('다운로드 완료 후 상단 알림창을 눌러 설치를 완료해 주세요 📲');
+    },1500);
     return;
   }
 
