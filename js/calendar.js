@@ -17,18 +17,39 @@ function monthHTML(){
   const y = cm.y, m = cm.m, n = new Date(y, m + 1, 0).getDate(), f = new Date(y, m, 1).getDay(), td = ymd(new Date());
   const gd = {};
   Object.values(S.goalsM).flat().forEach(g => { if (g.done && g.doneOn) gd[g.doneOn] = 1; });
+  const showL = S.cfg.showLunar !== false;
   let h = `<div class="mg" style="margin-top:12px">${[...WD].map((w, i) => `<span class="mu${i===0?' hl':i===6?' bl':''}">${w}</span>`).join('')}</div><div class="mg">` + '<i></i>'.repeat(f);
   for (let d = 1; d <= n; d++) {
     const k = ymd(new Date(y, m, d));
     const hasD = typeof hasDiary === 'function' ? hasDiary(k) : (S.diary && S.diary[k] && ((S.diary[k].title && S.diary[k].title.trim()) || (S.diary[k].text && S.diary[k].text.trim()) || (S.diary[k].photos && S.diary[k].photos.length > 0)));
-    h += `<button class="mc${k===td?' mt':''}${isRed(k)?' mh':isSat(k)?' mb':''}${k===sel?' ms':''}" data-a="mp" data-d="${k}" aria-label="${k}">${gd[k]?'<span class="gf" aria-label="목표 달성">🚩</span>':''}<b>${d}${hasD ? '<span class="cal-diary-icon" title="일기 작성됨">📝</span>' : ''}</b><span class="dt">${dotsFor(k)}</span><span class="mo">${S.moods[k]||''}</span></button>`;
+    let subTag = '';
+    if (showL) {
+      const ev = dayEvent(k);
+      if (ev) {
+        subTag = `<span class="sub-lbl${ev.isHoli ? ' hl' : ''}">${esc(ev.name)}</span>`;
+      } else {
+        const lu = lunarOf(k);
+        if (lu && lu.d === 1) {
+          subTag = `<span class="sub-lbl lu">${lu.m}.1</span>`;
+        }
+      }
+    }
+    h += `<button class="mc${k===td?' mt':''}${isRed(k)?' mh':isSat(k)?' mb':''}${k===sel?' ms':''}" data-a="mp" data-d="${k}" aria-label="${k}">${gd[k]?'<span class="gf" aria-label="목표 달성">🚩</span>':''}<b>${d}${hasD ? '<span class="cal-diary-icon" title="일기 작성됨">📝</span>' : ''}</b>${subTag}<span class="dt">${dotsFor(k)}</span><span class="mo">${S.moods[k]||''}</span></button>`;
   }
   return h + '</div>';
 }
 
 function dayPanelHTML(){
   const d = dkey(sel), hn = holiday(sel);
-  return `<div class="mp"><div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}</p><b style="font-size:18px;font-weight:500">${d.getMonth()+1}월 ${d.getDate()}일</b></div><span class="mu">${wxS(sel)}</span></div><div class="mr">${MOODS.map(e => `<button class="mm${S.moods[sel]===e?' on':''}" data-a="mood" data-m="${e}" aria-label="기분 ${e}">${e}</button>`).join('')}</div>${goalDoneHTML()}${listHTML()}<button class="ch" style="margin:8px 0 16px" data-a="new">＋ 일정 추가</button></div>`;
+  const showL = S.cfg.showLunar !== false;
+  const lu = showL ? lunarOf(sel) : null;
+  const ev = showL ? dayEvent(sel) : null;
+  let subText = WD[d.getDay()] + '요일';
+  if (lu && lu.full) subText += ' · ' + lu.full;
+  if (ev) subText += ' · ' + ev.name;
+  else if (hn) subText += ' · ' + hn;
+
+  return `<div class="mp"><div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${subText}</p><b style="font-size:18px;font-weight:500">${d.getMonth()+1}월 ${d.getDate()}일</b></div><span class="mu">${wxS(sel)}</span></div><div class="mr">${MOODS.map(e => `<button class="mm${S.moods[sel]===e?' on':''}" data-a="mood" data-m="${e}" aria-label="기분 ${e}">${e}</button>`).join('')}</div>${goalDoneHTML()}${listHTML()}<button class="ch" style="margin:8px 0 16px" data-a="new">＋ 일정 추가</button></div>`;
 }
 
 function calHTML(){

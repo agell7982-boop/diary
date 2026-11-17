@@ -66,6 +66,7 @@ let S = {
   diary: {},
   cfg: {
     lock: true,
+    showLunar: true,
     alarmSound: 'chime',
     alarmVol: 80,
     bgKeepAlive: true,
@@ -87,6 +88,7 @@ function load() {
       if (!S.weather) S.weather = {};
       if (!S.cfg) S.cfg = {};
       if (S.cfg.lock === undefined) S.cfg.lock = true;
+      if (S.cfg.showLunar === undefined) S.cfg.showLunar = true;
       if (!S.cfg.dailyRoutine) {
         S.cfg.dailyRoutine = {
           enabled: false,
@@ -262,6 +264,76 @@ function holidaysOf(y) {
 function holiday(k) { return holidaysOf(+k.slice(0, 4))[k] || null; }
 function isRed(k) { return new Date(k + 'T12:00:00').getDay() === 0 || !!holiday(k); }
 function isSat(k) { return new Date(k + 'T12:00:00').getDay() === 6; }
+
+// 6-1. 음력, 24절기 및 주요 기념일
+const LUNAR_CACHE = {};
+function lunarOf(k) {
+  if (LUNAR_CACHE[k]) return LUNAR_CACHE[k];
+  try {
+    const [y, m, d] = k.split('-').map(Number);
+    const t = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    const o = {};
+    new Intl.DateTimeFormat('en-u-ca-chinese', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' })
+      .formatToParts(t)
+      .forEach(x => { o[x.type] = x.value; });
+    const lm = parseInt(o.month);
+    const isLeap = /\D/.test(o.month);
+    const ld = +o.day;
+    const res = { m: lm, d: ld, leap: isLeap, text: (isLeap ? '윤' : '') + lm + '.' + ld, full: '음 ' + (isLeap ? '윤' : '') + lm + '월 ' + ld + '일' };
+    return LUNAR_CACHE[k] = res;
+  } catch (e) {
+    return { m: 1, d: 1, leap: false, text: '', full: '' };
+  }
+}
+
+const SOLAR_TERMS_C = [
+  { n: '소한', m: 1, c: 5.4055 }, { n: '대한', m: 1, c: 20.12 },
+  { n: '입춘', m: 2, c: 3.87 },   { n: '우수', m: 2, c: 18.73 },
+  { n: '경칩', m: 3, c: 5.63 },   { n: '춘분', m: 3, c: 20.646 },
+  { n: '청명', m: 4, c: 4.81 },   { n: '곡우', m: 4, c: 20.1 },
+  { n: '입하', m: 5, c: 5.52 },   { n: '소만', m: 5, c: 21.04 },
+  { n: '망종', m: 6, c: 5.678 },  { n: '하지', m: 6, c: 21.37 },
+  { n: '소서', m: 7, c: 7.108 },  { n: '대서', m: 7, c: 22.83 },
+  { n: '입추', m: 8, c: 7.5 },    { n: '처서', m: 8, c: 23.13 },
+  { n: '백로', m: 9, c: 7.646 },  { n: '추분', m: 9, c: 23.042 },
+  { n: '한로', m: 10, c: 8.318 }, { n: '상강', m: 10, c: 23.438 },
+  { n: '입동', m: 11, c: 7.438 }, { n: '소설', m: 11, c: 22.36 },
+  { n: '대설', m: 12, c: 7.18 },  { n: '동지', m: 12, c: 21.94 }
+];
+const TERMS_CACHE = {};
+function termsOf(y) {
+  if (TERMS_CACHE[y]) return TERMS_CACHE[y];
+  const map = {};
+  const yDiff = y - 2000;
+  SOLAR_TERMS_C.forEach(t => {
+    const d = Math.floor(yDiff * 0.2422 + t.c) - Math.floor(yDiff / 4);
+    map[y + '-' + pad(t.m) + '-' + pad(d)] = t.n;
+  });
+  return TERMS_CACHE[y] = map;
+}
+
+const SPECIAL_DAYS = {
+  '02-14': '밸런타인', '03-14': '화이트데이', '04-05': '식목일', '05-01': '근로자의날',
+  '05-08': '어버이날', '05-15': '스승의날', '06-25': '6·25', '07-17': '제헌절',
+  '10-01': '국군의날', '10-25': '독도의날', '10-31': '핼러윈', '11-11': '농업인의날', '12-31': '그믐'
+};
+
+function dayEvent(k) {
+  const h = holiday(k);
+  if (h) return { name: h, isHoli: true };
+  const md = k.slice(5);
+  if (SPECIAL_DAYS[md]) return { name: SPECIAL_DAYS[md], isHoli: false };
+  const y = +k.slice(0, 4);
+  const term = termsOf(y)[k];
+  if (term) return { name: term, isHoli: false };
+  const l = lunarOf(k);
+  if (!l.leap) {
+    if (l.m === 1 && l.d === 15) return { name: '정월대보름', isHoli: false };
+    if (l.m === 5 && l.d === 5) return { name: '단오', isHoli: false };
+    if (l.m === 7 && l.d === 7) return { name: '칠석', isHoli: false };
+  }
+  return null;
+}
 
 // 7. 실시간 날씨 연동 (wttr.in 초고속 연동 & 로컬 캐싱)
 const WX_CACHE_KEY = 'diary.weather.cache';

@@ -194,8 +194,17 @@ function recHTML(){
   const isSaved=hasDiary(sel);
   const isEditing=EDITING_DAY===sel||!isSaved;
   const curWx=dy.weather||wxS(sel);
+  const showL=S.cfg.showLunar!==false;
+  const lu=showL&&typeof lunarOf==='function'?lunarOf(sel):null;
+  const ev=showL&&typeof dayEvent==='function'?dayEvent(sel):null;
+  let dateMeta=WD[d.getDay()]+'요일';
+  if(lu&&lu.text)dateMeta+=' · 음 '+lu.text;
+  if(ev)dateMeta+=' · '+ev.name;
+  else if(hn)dateMeta+=' · '+hn;
+  if(curWx)dateMeta+=' · '+esc(curWx);
+  else if(wxT(sel))dateMeta+=wxT(sel);
 
-  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${curWx?' · '+esc(curWx):wxT(sel)}</p><h1>${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div><button class="nv" data-a="rd" data-n="-1" aria-label="전날">‹</button><button class="nv" data-a="rd" data-n="1" aria-label="다음날">›</button></div></div><div id="ls">`
+  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${dateMeta}</p><h1>${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div><button class="nv" data-a="rd" data-n="-1" aria-label="전날">‹</button><button class="nv" data-a="rd" data-n="1" aria-label="다음날">›</button></div></div><div id="ls">`
     + (it.length ? it.map(i=>{
         const o=OPEN.has(i.id);
         return `<div class="rc"><div class="r" style="border:0"><button class="ck${i.done?' dn':''}" role="checkbox" aria-checked="${i.done}" aria-label="완료 표시" data-a="done" data-id="${i.id}"></button><button class="rb" data-a="ropen" data-id="${i.id}" aria-expanded="${o}"><span class="mu tm">${fmtTime(i.time)}</span><span class="ti${i.done?' dd':''}">${esc(i.title)}</span><span class="mu">${o?'접기':'자세히'}</span></button></div>${o?`<textarea class="in rt" data-id="${i.id}" rows="4" placeholder="이 일정에 대해 자세히 적어요" aria-label="자세히">${esc(i.detail||'')}</textarea><button class="rd" data-a="rm" data-id="${i.id}">일정 삭제</button>`:''}</div>`;
@@ -204,7 +213,7 @@ function recHTML(){
       <!-- 읽기 전용 모드 -->
       <div class="rc" style="background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:10px 0 16px">
         <div style="margin-bottom:10px">
-          <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${WD[d.getDay()]}요일${curWx?' · '+esc(curWx):''}</span>
+          <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${dateMeta}</span>
           <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--tx);line-height:1.4">${esc(dy.title || '(제목 없음)')}</h2>
         </div>
         <div style="font-size:14px;line-height:1.75;color:var(--tx);white-space:pre-wrap;margin:12px 0;min-height:50px">${esc(dy.text || '(작성된 내용이 없습니다)')}</div>

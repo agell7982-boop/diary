@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.5.4';
+const APP_CURRENT_VERSION = '2.6.0';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -482,7 +482,7 @@ ${UPDATE_STATUS.hasUpdate ? `
 
 <!-- 5. 글꼴 & 보기 설정 카드 -->
 <div class="set-card${SET_SEC_OPEN.font?'':' closed'}">
-  ${secCardHead('font', '🔤 글꼴 & 보기 설정', '글자 크기 조절, 나만의 글꼴(TTF) 첨부, 12/24시간제 표기', `${S.cfg.fs||15}px · ${S.fmt12?'12시간제':'24시간제'}`)}
+  ${secCardHead('font', '🔤 글꼴 & 보기 설정', '글자 크기 조절, 나만의 글꼴(TTF) 첨부, 음력 및 시간 표기', `${S.cfg.fs||15}px · ${S.cfg.showLunar!==false?'음력 켜짐':'음력 꺼짐'}`)}
   ${SET_SEC_OPEN.font ? `
     <div class="set-card-body">
       <div class="set-col">
@@ -491,6 +491,14 @@ ${UPDATE_STATUS.hasUpdate ? `
           <b id="fsv" style="font-size:14px;color:var(--ac)">${S.cfg.fs||15}px</b>
         </div>
         <input id="fs" type="range" min="12" max="22" value="${S.cfg.fs||15}" style="width:100%" aria-label="글자 크기">
+      </div>
+
+      <div class="set-row">
+        <div>
+          <div style="font-size:14px">음력 및 24절기·기념일 표시</div>
+          <div class="mu" style="font-size:12px">달력과 일정에 음력 날짜와 기념일을 표시해요</div>
+        </div>
+        <button class="ch${S.cfg.showLunar!==false?' on':''}" data-a="lunartog">${S.cfg.showLunar!==false?'켜짐':'꺼짐'}</button>
       </div>
 
       <div class="set-row">
@@ -610,6 +618,12 @@ A.cfgcancel=()=>{
 };
 
 A.fmt2=()=>{S.fmt12=!S.fmt12;save();render()};
+A.lunartog=()=>{
+  S.cfg.showLunar = S.cfg.showLunar === false;
+  save();
+  render();
+  toast(S.cfg.showLunar ? '음력 및 절기·기념일을 표시해요 ✨' : '음력 및 절기·기념일 표시를 껐어요');
+};
 A.settog=d=>{const s=d.sec;if(s){SET_SEC_OPEN[s]=!SET_SEC_OPEN[s];render()}};
 A.bgalmtog=async()=>{
   if(isNativeApp()){

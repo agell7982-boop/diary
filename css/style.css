@@ -61,6 +61,9 @@ textarea.in{padding:10px 12px;line-height:1.7;resize:vertical}
 .mc.ms b{font-weight:700;color:var(--tx)}
 .mc.ms.mh b{color:var(--rd)}
 .mc.ms.mb b{color:var(--bl)}
+.sub-lbl{font-size:9.5px;line-height:1.15;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92%;margin-top:1px;font-weight:400;letter-spacing:-0.4px}
+.sub-lbl.hl{color:var(--rd);font-weight:500}
+.sub-lbl.lu{color:var(--mu);opacity:.85}
 .mp{margin-top:16px;border-top:1px solid var(--ln);padding-top:12px}
 .mr{display:flex;gap:4px;margin:8px 0}.mm{font-size:22px;min-width:44px;border-radius:22px;opacity:.4}.mm.on{opacity:1;background:var(--ln)}
 textarea{font:inherit}

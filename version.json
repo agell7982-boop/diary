@@ -1,7 +1,7 @@
 {
-  "version": "2.5.4",
+  "version": "2.6.0",
   "buildDate": "2026-11-17",
-  "releaseNotes": "일정 및 달력 화면 손가락 좌우 드래그(스와이프) 넘기기 지원: 달력(다음달/이전달), 일정(다음주/이전주)",
+  "releaseNotes": "초경량 음력(초하루/상세), 24절기(입춘/하지/입동 등) 및 주요 기념일(어버이날/스승의날 등) 표시 지원 및 설정 토글 추가",
   "apkUrl": "https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk",
   "apkShortUrl": "https://is.gd/mydiaryapk"
 }

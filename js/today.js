@@ -13,8 +13,19 @@ function weekDays(){
 }
 
 function headHTML(){
-  const d = dkey(sel), home = sel === ymd(new Date()) && wk === 0, hn = holiday(sel);
-  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${wxT(sel)}</p><h1 style="margin:0">${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div>${home?'':'<button class="tx" data-a="today">오늘</button>'}<button class="nv" data-a="wk" data-n="-1" aria-label="지난주">‹</button><button class="nv" data-a="wk" data-n="1" aria-label="다음주">›</button></div></div>`;
+  const d = dkey(sel), home = sel === ymd(new Date()) && wk === 0;
+  const showL = S.cfg.showLunar !== false;
+  const lu = showL && typeof lunarOf === 'function' ? lunarOf(sel) : null;
+  const ev = showL && typeof dayEvent === 'function' ? dayEvent(sel) : null;
+  const hn = holiday(sel);
+  let subText = WD[d.getDay()] + '요일';
+  if (lu && lu.text) subText += ' · 음 ' + lu.text;
+  if (ev) subText += ' · ' + ev.name;
+  else if (hn) subText += ' · ' + hn;
+  const wx = wxT(sel);
+  if (wx) subText += wx;
+
+  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${subText}</p><h1 style="margin:0">${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div>${home?'':'<button class="tx" data-a="today">오늘</button>'}<button class="nv" data-a="wk" data-n="-1" aria-label="지난주">‹</button><button class="nv" data-a="wk" data-n="1" aria-label="다음주">›</button></div></div>`;
 }
 
 function weekHTML(){
