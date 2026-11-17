@@ -69,32 +69,72 @@ function isNewerVersion(remote,local){
   return false;
 }
 
+const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/agell7982-boop/diary/main/version.json';
+const GITHUB_APK_URL = 'https://github.com/agell7982-boop/diary/raw/main/diary-debug.apk';
+const SHORT_APK_URL = 'https://is.gd/mydiaryapk';
+
+function showUpdateModal(ver, notes, isCurrent=false){
+  const exist=document.getElementById('update-modal');
+  if(exist)exist.remove();
+
+  const div=document.createElement('div');
+  div.id='update-modal';
+  div.className='ov';
+  div.style.zIndex='99';
+  div.innerHTML=`
+    <div class="sh" style="text-align:center;padding:24px 20px">
+      <div style="font-size:44px;margin:0 auto 10px;line-height:1">🚀</div>
+      <b style="font-size:18px;display:block;margin-bottom:4px;color:var(--tx)">
+        ${isCurrent ? '현재 최신 버전을 사용 중입니다' : '새로운 업데이트가 있습니다!'}
+      </b>
+      <p class="mu" style="font-size:13px;margin:4px 0 12px">
+        버전: <b>v${esc(ver)}</b> ${isCurrent ? '(최신 상태)' : `(현재 설치: v${APP_CURRENT_VERSION})`}
+      </p>
+      <div style="background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.55;text-align:left;margin-bottom:16px;white-space:pre-wrap;color:var(--tx)">
+        ${esc(notes || '새로운 기능과 성능 개선이 포함되어 있습니다.')}
+      </div>
+      <div class="rw" style="gap:8px">
+        <button class="ch pr update-btn-highlight" style="flex:1" data-a="applyupdate">
+          ${isCurrent ? (isNativeApp() ? '최신 APK 다시 받기 📥' : '최신 버전 새로고침 🔄') : (isNativeApp() ? '지금 APK 다운로드 📥' : '지금 즉시 업데이트 🚀')}
+        </button>
+        <button class="ch" data-a="closeupdmodal">닫기</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
 async function checkForUpdates(manual=false){
   if(UPDATE_STATUS.checking)return;
   UPDATE_STATUS.checking=true;
-  if(manual)render();
+  if(manual)toast('최신 업데이트를 확인하고 있어요... 🔍');
+  render();
 
   try{
-    const url='./version.json?_t='+Date.now();
-    let res=null;
+    let data=null;
     try{
-      res=await fetch(url,{cache:'no-store'});
+      const res=await fetch(GITHUB_VERSION_URL+'?_t='+Date.now(),{cache:'no-store'});
+      if(res&&res.ok){
+        data=await res.json();
+      }
     }catch(e){
-      try{
-        res=await fetch('https://raw.githubusercontent.com/agell7982-boop/diary/main/version.json?_t='+Date.now(),{cache:'no-store'});
-      }catch(err){}
+      console.warn('GitHub version fetch failed, fallback to local',e);
     }
 
-    if(res&&res.ok){
-      const data=await res.json();
-      if(data&&data.version){
-        UPDATE_STATUS.latestVersion=data.version;
-        UPDATE_STATUS.notes=data.releaseNotes||'';
-        UPDATE_STATUS.apkUrl=data.apkUrl||UPDATE_STATUS.apkUrl;
-        UPDATE_STATUS.apkShortUrl=data.apkShortUrl||UPDATE_STATUS.apkShortUrl;
-        UPDATE_STATUS.buildDate=data.buildDate||UPDATE_STATUS.buildDate;
-        UPDATE_STATUS.hasUpdate=isNewerVersion(data.version,APP_CURRENT_VERSION);
-      }
+    if(!data){
+      try{
+        const localRes=await fetch('./version.json?_t='+Date.now(),{cache:'no-store'});
+        if(localRes&&localRes.ok) data=await localRes.json();
+      }catch(e){}
+    }
+
+    if(data&&data.version){
+      UPDATE_STATUS.latestVersion=data.version;
+      UPDATE_STATUS.notes=data.releaseNotes||'새로운 기능 및 안정화 패치가 준비되었어요.';
+      UPDATE_STATUS.apkUrl=data.apkUrl||GITHUB_APK_URL;
+      UPDATE_STATUS.apkShortUrl=data.apkShortUrl||SHORT_APK_URL;
+      UPDATE_STATUS.buildDate=data.buildDate||UPDATE_STATUS.buildDate;
+      UPDATE_STATUS.hasUpdate=isNewerVersion(data.version,APP_CURRENT_VERSION);
     }
 
     if('serviceWorker' in navigator&&window.SW_REG){
@@ -107,14 +147,18 @@ async function checkForUpdates(manual=false){
 
     if(manual){
       if(UPDATE_STATUS.hasUpdate){
-        toast(`🎉 새로운 버전(v${UPDATE_STATUS.latestVersion})이 있어요! [자동 업데이트]를 눌러주세요.`);
+        showUpdateModal(UPDATE_STATUS.latestVersion,UPDATE_STATUS.notes,false);
       }else{
-        toast(`✅ 현재 최신 버전(v${APP_CURRENT_VERSION})을 사용 중입니다.`);
+        showUpdateModal(APP_CURRENT_VERSION,'현재 최신 버전을 이용 중입니다.\n필요하신 경우 최신 안드로이드 설치 파일(APK)을 다시 다운로드할 수 있습니다.',true);
+      }
+    }else{
+      if(UPDATE_STATUS.hasUpdate){
+        showUpdateModal(UPDATE_STATUS.latestVersion,UPDATE_STATUS.notes,false);
       }
     }
   }catch(err){
     UPDATE_STATUS.checking=false;
-    if(manual)toast('업데이트 확인 중 네트워크를 확인해 주세요.');
+    if(manual)toast('업데이트 확인 중 인터넷 연결을 확인해 주세요.');
     render();
   }
 }
@@ -227,15 +271,12 @@ ${UPDATE_STATUS.hasUpdate ? `
         <div>
           <div style="font-size:14px;font-weight:500">앱 버전 및 업데이트</div>
           <div class="mu" style="font-size:12px;margin-top:2px">
-            현재 버전 v${APP_CURRENT_VERSION} ${UPDATE_STATUS.hasUpdate ? `· <b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)} 출시!</b>` : '· 최신 상태'}
+            현재 v${APP_CURRENT_VERSION} ${UPDATE_STATUS.hasUpdate ? `· <b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)} 준비됨!</b>` : '· 최신 상태'}
           </div>
         </div>
         <div class="rw" style="gap:6px">
-          ${UPDATE_STATUS.hasUpdate ? `
-            <button class="ch on update-btn-highlight" data-a="applyupdate" style="white-space:nowrap">🚀 자동 업데이트</button>
-          ` : `
-            <button class="ch" data-a="chkupdate" style="white-space:nowrap">${UPDATE_STATUS.checking ? '확인 중...' : '업데이트 확인'}</button>
-          `}
+          <button class="ch" data-a="chkupdate" style="white-space:nowrap">${UPDATE_STATUS.checking ? '확인 중...' : '업데이트 확인'}</button>
+          <button class="ch ${UPDATE_STATUS.hasUpdate ? 'on update-btn-highlight' : ''}" data-a="applyupdate" style="white-space:nowrap">${isNativeApp() ? '최신 APK 받기 📥' : '새로고침 🔄'}</button>
         </div>
       </div>
     </div>
@@ -726,26 +767,43 @@ A.chkupdate=()=>{
   checkForUpdates(true);
 };
 
-A.applyupdate=async()=>{
+A.applyupdate=()=>{
+  const modal=document.getElementById('update-modal');
+  if(modal)modal.remove();
   if(isNativeApp()){
-    toast('최신 안드로이드 APK 다운로드 페이지로 연결합니다 📥');
-    const dlUrl=UPDATE_STATUS.apkShortUrl||'https://is.gd/mydiaryapk';
+    toast('최신 안드로이드 APK 다운로드를 시작합니다 📥');
+    const dlUrl=UPDATE_STATUS.apkShortUrl||SHORT_APK_URL;
+    const rawApk=UPDATE_STATUS.apkUrl||GITHUB_APK_URL;
     try{
-      window.open(dlUrl,'_system');
-    }catch(e){
-      location.href=dlUrl;
-    }
+      const a=document.createElement('a');
+      a.href=rawApk;
+      a.download='diary-debug.apk';
+      a.target='_blank';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>a.remove(),1000);
+    }catch(e){}
+    setTimeout(()=>{
+      try{
+        if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App){
+          window.open(dlUrl,'_system');
+        }else{
+          window.location.href=dlUrl;
+        }
+      }catch(err){
+        window.location.href=dlUrl;
+      }
+    },400);
     return;
   }
 
   toast('최신 버전으로 자동 업데이트를 적용하고 새로고침합니다... 🔄');
   try{
     if('caches' in window){
-      const keys=await caches.keys();
-      await Promise.all(keys.map(k=>caches.delete(k)));
+      caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k))));
     }
     if('serviceWorker' in navigator&&window.SW_REG){
-      await window.SW_REG.unregister().catch(()=>{});
+      window.SW_REG.unregister().catch(()=>{});
     }
   }catch(e){}
 
@@ -753,6 +811,11 @@ A.applyupdate=async()=>{
     const cleanUrl=window.location.origin+window.location.pathname+'?_upd='+Date.now();
     window.location.replace(cleanUrl);
   },600);
+};
+
+A.closeupdmodal=()=>{
+  const modal=document.getElementById('update-modal');
+  if(modal)modal.remove();
 };
 
 /* 하루 일정 조절 알림 (데일리 루틴) 액션 핸들러 */

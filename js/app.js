@@ -63,6 +63,11 @@ if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isPlug
 
 // 안드로이드 네이티브 및 브라우저 뒤로가기(Back Button) 제어
 function closeTopOverlay(){
+  const upd = document.getElementById('update-modal');
+  if(upd){
+    upd.remove();
+    return true;
+  }
   const alm = document.getElementById('alarm-dialog');
   if(alm){
     alm.remove();
