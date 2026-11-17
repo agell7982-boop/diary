@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.3.0';
+const APP_CURRENT_VERSION = '2.4.0';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -271,13 +271,12 @@ ${UPDATE_STATUS.hasUpdate ? `
         <div>
           <div style="font-size:14px;font-weight:500">앱 버전 및 업데이트</div>
           <div class="mu" style="font-size:12px;margin-top:2px">
-            현재 v${APP_CURRENT_VERSION} ${UPDATE_STATUS.hasUpdate ? `· <b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)} 준비됨!</b>` : '· 최신 상태'}
+            현재 v${APP_CURRENT_VERSION} ${UPDATE_STATUS.hasUpdate ? `· <b style="color:var(--ac)">새 버전 v${esc(UPDATE_STATUS.latestVersion)} 출시!</b>` : '· 최신 상태'}
           </div>
         </div>
-        <div class="rw" style="gap:6px">
-          <button class="ch" data-a="chkupdate" style="white-space:nowrap">${UPDATE_STATUS.checking ? '확인 중...' : '업데이트 확인'}</button>
-          <button class="ch ${UPDATE_STATUS.hasUpdate ? 'on update-btn-highlight' : ''}" data-a="applyupdate" style="white-space:nowrap">${isNativeApp() ? '최신 APK 받기 📥' : '새로고침 🔄'}</button>
-        </div>
+        <button class="ch ${UPDATE_STATUS.hasUpdate ? 'on update-btn-highlight' : ''}" data-a="chkupdate" style="white-space:nowrap;flex:none">
+          ${UPDATE_STATUS.checking ? '확인 중...' : (UPDATE_STATUS.hasUpdate ? '🚀 새 버전 업데이트' : '버전 확인 & 업데이트')}
+        </button>
       </div>
     </div>
   ` : ''}

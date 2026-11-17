@@ -21,8 +21,9 @@ function render(){
   });
 }
 
+const TAB_STACK = [];
 app.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset)});
-A.tab=d=>{
+A.tab=(d, fromBack=false)=>{
   DY=false;
   stopAlarmSound();
   if(tab==='기록'&&d.t!=='기록')U=false;
@@ -30,6 +31,12 @@ A.tab=d=>{
     if(TEMP_CFG){TEMP_CFG=null;applyCfg()}
     TEMP_SND=null;
     TEMP_VOL=null;
+  }
+  if(!fromBack && tab !== d.t){
+    TAB_STACK.push(tab);
+    try {
+      history.pushState({ tab: d.t }, '');
+    } catch(e) {}
   }
   tab=d.t;
   if(tab==='달력')cm={y:+sel.slice(0,4),m:+sel.slice(5,7)-1};
@@ -63,6 +70,11 @@ if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isPlug
 
 // 안드로이드 네이티브 및 브라우저 뒤로가기(Back Button) 제어
 function closeTopOverlay(){
+  const photo = document.getElementById('photo-lightbox');
+  if(photo){
+    photo.remove();
+    return true;
+  }
   const upd = document.getElementById('update-modal');
   if(upd){
     upd.remove();
@@ -91,17 +103,35 @@ function closeTopOverlay(){
     if(typeof closeGoalSheet === 'function') closeGoalSheet();
     return true;
   }
+  if(tab === '기록' && typeof EDITING_DAY !== 'undefined' && EDITING_DAY !== null){
+    EDITING_DAY = null;
+    render();
+    toast('일기 수정을 취소했어요');
+    return true;
+  }
+  return false;
+}
+
+function handleAppBack(){
+  if (closeTopOverlay()) {
+    return true;
+  }
+  if (TAB_STACK.length > 0) {
+    const prevTab = TAB_STACK.pop();
+    A.tab({ t: prevTab }, true);
+    return true;
+  }
+  if (tab !== '일정') {
+    A.tab({ t: '일정' }, true);
+    return true;
+  }
   return false;
 }
 
 let lastBackPress = 0;
 if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App && typeof window.Capacitor.Plugins.App.addListener === 'function') {
   window.Capacitor.Plugins.App.addListener('backButton', () => {
-    if (closeTopOverlay()) {
-      return;
-    }
-    if (tab !== '일정') {
-      A.tab({ t: '일정' });
+    if (handleAppBack()) {
       return;
     }
     const now = Date.now();
@@ -116,8 +146,27 @@ if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugin
   });
 }
 
+try {
+  history.replaceState({ tab: '일정', root: true }, '');
+} catch(e) {}
+
 window.addEventListener('popstate', () => {
-  closeTopOverlay();
+  if (handleAppBack()) {
+    try {
+      history.pushState({ tab }, '');
+    } catch(err) {}
+  } else {
+    const now = Date.now();
+    if (now - lastBackPress < 2000) {
+      // 2초 내 재터치
+    } else {
+      lastBackPress = now;
+      toast('한 번 더 누르면 앱을 종료합니다');
+      try {
+        history.pushState({ tab }, '');
+      } catch(err) {}
+    }
+  }
 });
 
 window.addEventListener('focus', checkAlarms);
