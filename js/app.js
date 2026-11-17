@@ -24,7 +24,9 @@ function render(){
 const TAB_STACK = [];
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]');
-  if (b && A[b.dataset.a]) A[b.dataset.a](b.dataset);
+  if (!b) return;
+  if (b.classList.contains('ov') && e.target !== b) return;
+  if (A[b.dataset.a]) A[b.dataset.a](b.dataset);
 });
 A.tab=(d, fromBack=false)=>{
   DY=false;

@@ -1,5 +1,5 @@
-/* js/diary.js - [기록] 탭, 암호화 잠금, 일기 저장 및 지난 일기 목록 모아보기 */
-let U=false,OPEN=new Set();
+/* js/diary.js - [기록] 탭, 일기 저장 및 지난 일기 목록 모아보기 */
+let U=true,OPEN=new Set();
 let EDITING_DAY=null;
 
 function hasDiary(k){
@@ -170,11 +170,12 @@ function diaryListHTML(){
           const dateStr=`${dObj.getFullYear()}.${pad(dObj.getMonth()+1)}.${pad(dObj.getDate())} (${WD[dObj.getDay()]})`;
           const title=(dy.title&&dy.title.trim())?dy.title:'(제목 없음)';
           const hasPhoto=dy.photos&&dy.photos.length>0;
+          const wxIcon=dy.weather?dy.weather.slice(0,2):'';
 
           return `
             <div class="diary-row-item${isCur?' on-sel':''}" data-a="gody" data-d="${dateKey}">
               <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px">
-                <span class="diary-row-date">${dateStr}</span>
+                <span class="diary-row-date">${dateStr}${wxIcon?' '+wxIcon:''}</span>
                 <span class="diary-row-title">${esc(title)}</span>
                 ${hasPhoto?`<span style="font-size:11px;opacity:0.75">📷${dy.photos.length}</span>`:''}
               </div>
@@ -188,12 +189,12 @@ function diaryListHTML(){
 }
 
 function recHTML(){
-  if(S.cfg.lock&&!U)return lockHTML();
   const d=dkey(sel),hn=holiday(sel),it=itemsOn(sel),dy=S.diary[sel]||{};
   const isSaved=hasDiary(sel);
   const isEditing=EDITING_DAY===sel||!isSaved;
+  const curWx=dy.weather||wxS(sel);
 
-  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${wxT(sel)}</p><h1>${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div><button class="nv" data-a="rd" data-n="-1" aria-label="전날">‹</button><button class="nv" data-a="rd" data-n="1" aria-label="다음날">›</button></div></div><div id="ls">`
+  return `<div class="hd"><div><p class="mu${isRed(sel)?' hl':isSat(sel)?' bl':''}" style="margin:0">${WD[d.getDay()]}요일${hn?' · '+hn:''}${curWx?' · '+esc(curWx):wxT(sel)}</p><h1>${d.getMonth()+1}월 ${d.getDate()}일</h1></div><div><button class="nv" data-a="rd" data-n="-1" aria-label="전날">‹</button><button class="nv" data-a="rd" data-n="1" aria-label="다음날">›</button></div></div><div id="ls">`
     + (it.length ? it.map(i=>{
         const o=OPEN.has(i.id);
         return `<div class="rc"><div class="r" style="border:0"><button class="ck${i.done?' dn':''}" role="checkbox" aria-checked="${i.done}" aria-label="완료 표시" data-a="done" data-id="${i.id}"></button><button class="rb" data-a="ropen" data-id="${i.id}" aria-expanded="${o}"><span class="mu tm">${fmtTime(i.time)}</span><span class="ti${i.done?' dd':''}">${esc(i.title)}</span><span class="mu">${o?'접기':'자세히'}</span></button></div>${o?`<textarea class="in rt" data-id="${i.id}" rows="4" placeholder="이 일정에 대해 자세히 적어요" aria-label="자세히">${esc(i.detail||'')}</textarea><button class="rd" data-a="rm" data-id="${i.id}">일정 삭제</button>`:''}</div>`;
@@ -203,7 +204,7 @@ function recHTML(){
       <div class="rc" style="background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:18px;margin:10px 0 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div style="flex:1;min-width:0;padding-right:10px">
-            <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${WD[d.getDay()]}요일 · 작성된 일기</span>
+            <span class="mu" style="font-size:12px;display:block;margin-bottom:2px">${WD[d.getDay()]}요일${curWx?' · '+esc(curWx):''}</span>
             <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--tx);line-height:1.4">${esc(dy.title || '(제목 없음)')}</h2>
           </div>
           <button class="ch pr" data-a="dyedit" style="flex:none;white-space:nowrap;padding:6px 12px;font-size:13px">✏️ 일기 수정</button>
@@ -222,6 +223,16 @@ function recHTML(){
           <b style="font-size:15px;color:var(--tx)">📝 ${d.getMonth()+1}월 ${d.getDate()}일 일기 ${isSaved ? '수정하기' : '쓰기'}</b>
           <span class="mu" style="font-size:12px">${WD[d.getDay()]}요일</span>
         </div>
+        <!-- 날씨 선택 및 저장 UI -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px;padding:6px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:12px">
+          <div style="font-size:13px;display:flex;align-items:center;gap:6px">
+            <span class="mu">날씨:</span>
+            <b style="color:var(--tx)">${esc(dy.weather || wxS(sel) || '☀️ 맑음')}</b>
+          </div>
+          <div class="rw" style="gap:2px">
+            ${['☀️','🌤️','☁️','🌧️','🌨️'].map(w=>`<button type="button" class="mm${(dy.weather||wxS(sel)||'').startsWith(w)?' on':''}" data-a="dywx" data-w="${w}" style="font-size:15px;min-width:30px;height:30px;border-radius:6px;padding:0">${w}</button>`).join('')}
+          </div>
+        </div>
         <input id="dy-t" class="in" data-dt="1" placeholder="일기 제목을 적어보세요" value="${esc(dy.title||'')}" aria-label="일기 제목" style="margin-bottom:8px">
         <textarea id="dy-b" class="in rt" data-day="1" rows="7" placeholder="오늘 하루 어떤 일이 있었나요? 자유롭게 적어보세요 🌿" aria-label="일기">${esc(dy.text||'')}</textarea>
         ${phHTML(dy.photos, true)}
@@ -233,7 +244,7 @@ function recHTML(){
       </div>
     `)
     + diaryListHTML()
-    + `<button class="ch" style="margin:16px 0 28px;width:100%" data-a="relock">🔒 일기장 지금 잠그기</button></div>`;
+    + `</div>`;
 }
 
 A.unlock=async()=>{
@@ -316,6 +327,25 @@ FI.onchange=async()=>{
 A.pho=()=>FI.click();
 A.phd=d=>{phArr().splice(+d.n,1);save();render();toast('사진을 삭제했어요');};
 
+const WX_MAP = {
+  '☀️': '☀️ 맑음',
+  '🌤️': '🌤️ 구름조금',
+  '☁️': '☁️ 흐림',
+  '🌧️': '🌧️ 비',
+  '🌨️': '🌨️ 눈'
+};
+
+A.dywx=d=>{
+  const rec=dayRec();
+  const t=$('dy-t');
+  const b=$('dy-b');
+  if(t) rec.title=t.value;
+  if(b) rec.text=b.value;
+  rec.weather=WX_MAP[d.w]||d.w;
+  save();
+  render();
+};
+
 A.dyedit=()=>{
   EDITING_DAY=sel;
   render();
@@ -329,12 +359,16 @@ A.dycancel=()=>{
 A.dysave=()=>{
   const t=($('dy-t')?.value||'').trim();
   const b=($('dy-b')?.value||'').trim();
-  dayRec().title=t;
-  dayRec().text=b;
+  const rec=dayRec();
+  rec.title=t;
+  rec.text=b;
+  if(!rec.weather){
+    rec.weather=wxS(sel)||'☀️ 맑음';
+  }
   EDITING_DAY=null;
   save();
   render();
-  toast('일기가 성공적으로 저장되었어요 ✨');
+  toast('일기와 날씨가 성공적으로 저장되었어요 ✨');
 };
 
 A.gody=d=>{

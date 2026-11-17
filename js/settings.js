@@ -14,7 +14,7 @@ const GRAD_PRESETS=[
 let TEMP_CFG=null, TEMP_SND=null, TEMP_VOL=null, COLOR_DETAIL_OPEN=false, PW_BOX_OPEN=false, EMAIL_LOGIN_OPEN=false, ALARM_GUIDE_OPEN=false;
 let SET_SEC_OPEN={account:false,theme:false,alarm:false,daily:false,font:false,lock:false};
 const SOUND_NAMES={chime:'맑은 차임 (기본)',beep:'디지털 시계 비프',bell:'부드러운 종소리',marimba:'경쾌한 마림바',custom:'내 음원 파일'};
-const APP_CURRENT_VERSION = '2.4.3';
+const APP_CURRENT_VERSION = '2.5.0';
 let UPDATE_STATUS = {
   checked: false,
   hasUpdate: false,
@@ -248,7 +248,7 @@ function secCardHead(secId, title, summary, badgeText){
 
 function setHTML(){
   if(!TEMP_CFG)TEMP_CFG=JSON.parse(JSON.stringify(S.cfg));
-  const c=getActiveCfg(),has=!!S.cfg.pw;
+  const c=getActiveCfg();
   const isModified=JSON.stringify(TEMP_CFG)!==JSON.stringify(S.cfg);
   const curSound=TEMP_SND||S.cfg.alarmSound||'chime';
   const curVol=TEMP_VOL!==null?TEMP_VOL:(S.cfg.alarmVol!==undefined?S.cfg.alarmVol:80);
@@ -481,7 +481,7 @@ ${UPDATE_STATUS.hasUpdate ? `
 </div>
 
 <!-- 5. 글꼴 & 보기 설정 카드 -->
-<div class="set-card${SET_SEC_OPEN.font?'':' closed'}">
+<div class="set-card${SET_SEC_OPEN.font?'':' closed'}" style="margin-bottom:28px">
   ${secCardHead('font', '🔤 글꼴 & 보기 설정', '글자 크기 조절, 나만의 글꼴(TTF) 첨부, 12/24시간제 표기', `${S.cfg.fs||15}px · ${S.fmt12?'12시간제':'24시간제'}`)}
   ${SET_SEC_OPEN.font ? `
     <div class="set-card-body">
@@ -510,39 +510,6 @@ ${UPDATE_STATUS.hasUpdate ? `
           <div class="mu" style="font-size:12px">${S.fmt12?'오전/오후 12시간제':'24시간제'}</div>
         </div>
         <button class="ch on" data-a="fmt2">변경</button>
-      </div>
-    </div>
-  ` : ''}
-</div>
-
-<!-- 6. 일기 보안 & 잠금 카드 -->
-<div class="set-card${SET_SEC_OPEN.lock?'':' closed'}" style="margin-bottom:28px">
-  ${secCardHead('lock', '🔐 일기 보안 & 잠금', '비밀번호 설정 및 일기장 SHA-256 단방향 암호화 잠금', S.cfg.lock ? '🔒 잠금 켜짐' : '🔓 잠금 꺼짐')}
-  ${SET_SEC_OPEN.lock ? `
-    <div class="set-card-body">
-      <div class="set-row">
-        <div>
-          <div style="font-size:14px">일기장 암호화 잠금</div>
-          <div class="mu" style="font-size:12px">${S.cfg.lock ? '앱 실행 시 일기 조회에 비밀번호가 필요해요.' : '비밀번호 없이 일기를 바로 볼 수 있어요.'}</div>
-        </div>
-        <button class="ch${S.cfg.lock?' on':''}" data-a="lockt">${S.cfg.lock?'잠금 켜짐':'잠금 꺼짐'}</button>
-      </div>
-
-      <div class="set-col">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:14px">비밀번호 설정</div>
-            <div class="mu" style="font-size:12px">${has?'비밀번호 설정됨':'아직 설정되지 않음'}</div>
-          </div>
-          <button class="ch" data-a="pwtog">${PW_BOX_OPEN?'닫기':(has?'비밀번호 변경':'비밀번호 등록')}</button>
-        </div>
-        ${PW_BOX_OPEN ? `
-          <div style="margin-top:10px">
-            <input id="sp0" class="in" type="password" placeholder="현재 비밀번호"${has?'':' hidden'} aria-label="현재 비밀번호">
-            <input id="sp1" class="in" type="password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호" style="margin-top:4px">
-            <button class="ch on" style="width:100%;margin-top:8px" data-a="chpw">비밀번호 저장</button>
-          </div>
-        ` : ''}
       </div>
     </div>
   ` : ''}

@@ -59,12 +59,13 @@ let S = {
   goals: [],
   goalsM: {},
   moods: {},
+  weather: {},
   reps: [],
   skip: {},
   rdone: {},
   diary: {},
   cfg: {
-    lock: true,
+    lock: false,
     alarmSound: 'chime',
     alarmVol: 80,
     bgKeepAlive: true,
@@ -83,7 +84,9 @@ function load() {
     const r = localStorage.getItem(KEY);
     if (r) {
       S = Object.assign(S, JSON.parse(r));
+      if (!S.weather) S.weather = {};
       if (!S.cfg) S.cfg = {};
+      if (S.cfg.lock === undefined) S.cfg.lock = false;
       if (!S.cfg.dailyRoutine) {
         S.cfg.dailyRoutine = {
           enabled: false,
@@ -319,18 +322,21 @@ async function wxLoad() {
 
   if (success) {
     WX.state = 'ok';
+    if (!S.weather) S.weather = {};
+    Object.assign(S.weather, WX.data);
     try {
       localStorage.setItem(WX_CACHE_KEY, JSON.stringify(WX.data));
     } catch(e){}
+    save();
   } else {
-    WX.state = Object.keys(WX.data).length ? 'ok' : 'fail';
+    WX.state = (Object.keys(WX.data).length || Object.keys(S.weather || {}).length) ? 'ok' : 'fail';
   }
 
   if (typeof render === 'function' && !T && !R) render();
 }
 
 function wxS(k) {
-  const w = WX.data[k];
+  const w = (S.weather && S.weather[k]) || WX.data[k];
   return w ? `${w.icon} ${w.hi}°/${w.lo}°` : '';
 }
 const wxT = k => wxS(k) ? ' · ' + wxS(k) : '';
